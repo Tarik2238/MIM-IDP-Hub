@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Player Database · Mics in Motion</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#080c10; --bg2:#0d1117; --bg3:#161b22; --bg4:#1c2128;
+  --border:#21262d; --border2:#30363d;
+  --text:#e6edf3; --muted:#7d8590; --muted2:#9198a1;
+  --green-orig:#8B5E3C; --green-light:#8B5E3C; --green-glow:#1a4a2a;
+  --gold:#8B5E3C; --gold-dim:#4a3020;
+  --red:#da3633; --blue:#8B5E3C;
+  --radius:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;display:flex;flex-direction:column;}
+
+/* NAV */
+nav{background:rgba(13,17,23,.97);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);padding:0 40px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.brand{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:3px;color:#fff;text-decoration:none;}
+.brand em{color:var(--gold);font-style:normal;}
+.nav-links{display:flex;gap:6px;}
+.nav-link{font-size:12px;font-weight:500;color:var(--muted);text-decoration:none;padding:5px 12px;border-radius:6px;transition:all .15s;}
+.nav-link:hover{color:var(--text);background:var(--bg3);}
+.nav-link.active{color:var(--green-light);background:rgba(35,134,54,.1);}
+
+/* SEARCH HERO */
+.search-hero{
+  padding:56px 40px 40px;
+  text-align:center;
+  background:radial-gradient(ellipse 60% 60% at 50% 0%,rgba(35,134,54,.1) 0%,transparent 70%);
+  border-bottom:1px solid var(--border);
+}
+.sh-eyebrow{font-size:10px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:var(--green-light);margin-bottom:12px;}
+.sh-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(32px,5vw,56px);letter-spacing:4px;color:#fff;line-height:1;}
+.sh-title span{color:var(--gold);}
+.sh-sub{font-size:13px;color:var(--muted);margin-top:8px;letter-spacing:.3px;}
+
+.search-box-wrap{
+  margin:28px auto 0;
+  max-width:580px;
+  position:relative;
+}
+.search-box{
+  width:100%;
+  background:var(--bg3);
+  border:1.5px solid var(--border2);
+  border-radius:12px;
+  color:var(--text);
+  font-family:'Inter',sans-serif;
+  font-size:16px;
+  font-weight:400;
+  padding:16px 52px 16px 20px;
+  outline:none;
+  transition:border-color .2s,box-shadow .2s;
+}
+.search-box:focus{border-color:var(--green-light);box-shadow:0 0 0 3px rgba(46,160,67,.15);}
+.search-box::placeholder{color:var(--muted);}
+.search-icon{position:absolute;right:18px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:18px;pointer-events:none;}
+.search-hint{font-size:11px;color:var(--muted);margin-top:10px;letter-spacing:.5px;}
+
+/* FILTERS */
+.filter-bar{
+  display:flex;gap:8px;align-items:center;justify-content:center;
+  padding:14px 40px;
+  border-bottom:1px solid var(--border);
+  flex-wrap:wrap;
+  background:var(--bg2);
+}
+.filter-label{font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-right:4px;}
+.fchip{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:13px;letter-spacing:1.5px;
+  padding:5px 14px;
+  border:1px solid var(--border2);
+  border-radius:20px;
+  background:var(--bg3);
+  color:var(--muted2);
+  cursor:pointer;
+  transition:all .15s;
+}
+.fchip:hover{color:var(--text);border-color:var(--muted);}
+.fchip.active{background:rgba(35,134,54,.15);border-color:var(--green);color:var(--green-light);}
+
+/* RESULTS */
+.results-wrap{max-width:760px;margin:0 auto;padding:24px 40px 60px;width:100%;flex:1;}
+
+.results-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:14px;
+}
+.results-count-lbl{font-size:12px;color:var(--muted);letter-spacing:.5px;}
+.results-count-lbl strong{color:var(--text);}
+
+/* PLAYER ROW */
+.player-row{
+  display:flex;align-items:center;gap:16px;
+  padding:12px 16px;
+  background:var(--bg3);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  margin-bottom:8px;
+  text-decoration:none;
+  color:var(--text);
+  transition:all .18s;
+  position:relative;
+  overflow:hidden;
+}
+.player-row::before{
+  content:'';position:absolute;left:0;top:0;bottom:0;width:3px;
+  background:var(--green-light);
+  transform:scaleY(0);transition:transform .2s;
+}
+.player-row:hover::before{transform:scaleY(1);}
+.player-row:hover{border-color:var(--border2);background:var(--bg4);transform:translateX(3px);}
+
+.pr-headshot{
+  width:48px;height:48px;border-radius:6px;
+  object-fit:cover;object-position:top center;
+  background:var(--bg2);border:1px solid var(--border2);
+  flex-shrink:0;
+}
+.pr-headshot-fb{
+  width:48px;height:48px;border-radius:6px;
+  background:var(--bg2);border:1px solid var(--border2);
+  flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--muted);
+}
+.pr-info{flex:1;min-width:0;}
+.pr-name{font-weight:600;font-size:15px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pr-sub{font-size:11px;color:var(--muted);margin-top:2px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.pr-sub-sep{width:3px;height:3px;border-radius:50%;background:var(--border2);}
+
+.pr-badges{display:flex;gap:6px;align-items:center;}
+.badge{
+  font-family:'Bebas Neue',sans-serif;font-size:11px;font-weight:600;letter-spacing:1px;
+  padding:2px 8px;border-radius:4px;
+}
+.bp{background:rgba(46,160,67,.12);color:var(--green-light);border:1px solid rgba(46,160,67,.25);}
+.bt{background:rgba(201,168,76,.1);color:var(--gold);border:1px solid rgba(201,168,76,.2);}
+.bs-ACT{background:rgba(46,160,67,.1);color:var(--green-light);border:1px solid rgba(46,160,67,.2);}
+.bs-RET,.bs-CUT,.bs-INA,.bs-RES,.bs-PUP{background:rgba(125,133,144,.1);color:var(--muted2);border:1px solid var(--border2);}
+.bs-FA{background:rgba(31,111,235,.1);color:#58a6ff;border:1px solid rgba(31,111,235,.2);}
+
+.pr-arrow{color:var(--muted);font-size:14px;flex-shrink:0;}
+.player-row:hover .pr-arrow{color:var(--green-light);}
+
+/* SKELETON / STATES */
+.state-box{text-align:center;padding:60px 20px;color:var(--muted);}
+.state-box .state-icon{font-size:40px;margin-bottom:14px;}
+.state-box p{font-size:13px;line-height:1.6;}
+.state-box strong{color:var(--muted2);}
+
+.skeleton{animation:pulse 1.5s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:.4;}50%{opacity:.8;}}
+.skel-row{height:72px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:8px;}
+
+/* LOADING OVERLAY */
+#init-overlay{
+  position:fixed;inset:0;background:var(--bg);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  z-index:200;gap:14px;
+}
+#init-overlay.done{display:none;}
+.init-title{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:4px;color:var(--gold);}
+.init-sub{font-size:11px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;}
+.init-bar-wrap{width:220px;height:3px;background:var(--border2);border-radius:2px;overflow:hidden;}
+.init-bar{height:100%;background:var(--green-light);border-radius:2px;transition:width .4s ease;width:0%;}
+
+@media(max-width:600px){
+  nav{padding:0 16px;}
+  .search-hero{padding:40px 20px 28px;}
+  .filter-bar,.results-wrap{padding-left:16px;padding-right:16px;}
+}
+</style>
+</head>
+<body>
+
+<div id="init-overlay">
+  <div class="init-title">LOADING ROSTER DATA</div>
+  <div class="init-bar-wrap"><div class="init-bar" id="init-bar"></div></div>
+  <div class="init-sub" id="init-sub">Initializing…</div>
+</div>
+
+<nav>
+  <a href="index.html" class="brand">MICS IN <em>MOTION</em></a>
+  <div class="nav-links">
+    <a href="index.html" class="nav-link">Home</a>
+    <a href="players.html" class="nav-link active">Player DB</a>
+    <a href="#" class="nav-link">Team Hub</a>
+    <a href="#" class="nav-link">IDP Rankings</a>
+  </div>
+</nav>
+
+<div class="search-hero">
+  <div class="sh-eyebrow">Module 01</div>
+  <div class="sh-title">PLAYER <span>DATABASE</span></div>
+  <div class="sh-sub">IDP · Defensive Players · 2022–2026 · All Seasons</div>
+  <div class="search-box-wrap">
+    <input class="search-box" id="search-box" type="text" placeholder="Search player name…" oninput="onSearch()" autocomplete="off">
+    <span class="search-icon">⌕</span>
+  </div>
+  <div class="search-hint" id="search-hint">Type at least 3 characters to search</div>
+</div>
+
+<div class="filter-bar">
+  <span class="filter-label">Position</span>
+  <button class="fchip active" data-pos="" onclick="setPos(this,'')">All IDP</button>
+  <button class="fchip" data-pos="DL" onclick="setPos(this,'DL')">DL</button>
+  <button class="fchip" data-pos="LB" onclick="setPos(this,'LB')">LB</button>
+  <button class="fchip" data-pos="DB" onclick="setPos(this,'DB')">DB</button>
+</div>
+
+<div class="results-wrap">
+  <div id="results-header" class="results-header" style="display:none">
+    <div class="results-count-lbl" id="results-count"></div>
+  </div>
+  <div id="results-list">
+    <div class="state-box">
+      <div class="state-icon">🏈</div>
+      <p>Search for any <strong>IDP player</strong> across all seasons.<br>Results appear after 3 characters.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── CONFIG ──
+// Dynamic seasons: start 2022, go up to current year + 1 (try future, skip if 404)
+// START_YEAR = 2001 (set via ALL_SEASONS)
+const THIS_YEAR = new Date().getFullYear();
+const SEASONS = Array.from({length: THIS_YEAR - START_YEAR + 2}, (_,i) => START_YEAR + i);
+// Use jsdelivr CDN mirror - works from any origin without CORS issues
+const BASE = 'https://github.com/nflverse/nflverse-data/releases/download/rosters/roster_';
+const CORS = 'https://corsproxy.io/?url=';
+const CORS = 'https://corsproxy.io/?url=';
+
+// IDP position groups
+const DL_POS  = new Set(['DE','DT','NT','EDGE','IDL','DL','OLB']);
+const LB_POS  = new Set(['LB','ILB','MLB','OLB','LILB','RILB']);
+const DB_POS  = new Set(['CB','FS','SS','S','DB','SAF']);
+// Note: OLB can be LB or DL depending on context; we go by depth_chart_position too
+
+function idpGroup(pos, dcPos) {
+  const p = (pos||'').toUpperCase();
+  const d = (dcPos||'').toUpperCase();
+  // Check both
+  if (DL_POS.has(p) && !LB_POS.has(p)) return 'DL';
+  if (LB_POS.has(p)) return 'LB';
+  if (DB_POS.has(p) || DB_POS.has(d)) return 'DB';
+  if (DL_POS.has(d)) return 'DL';
+  if (LB_POS.has(d)) return 'LB';
+  return null; // not IDP
+}
+
+// ── STATE ──
+let players = new Map(); // gsis_id → player
+let activePos = '';
+let searchQ = '';
+
+// ── LOAD ──
+let allSeasonsLoaded = false;
+
+async function init() {
+  const bar = document.getElementById('init-bar');
+  const sub = document.getElementById('init-sub');
+
+  // Phase 1: Load recent 5 seasons fast
+  for (let i = 0; i < PRIORITY_SEASONS.length; i++) {
+    const yr = PRIORITY_SEASONS[i];
+    bar.style.width = ((i/PRIORITY_SEASONS.length)*85)+'%';
+    sub.textContent = `Loading ${yr} season…`;
+    try {
+      const r = await fetch(`${CORS}${encodeURIComponent(BASE+yr+'.csv')}`);
+      if (!r.ok) throw new Error(r.status);
+      const text = await r.text();
+      parseRoster(text, yr);
+    } catch(e) { console.warn(`${yr} failed:`, e); }
+  }
+
+  bar.style.width = '100%';
+  sub.textContent = 'Ready — loading historical seasons in background…';
+  setTimeout(() => document.getElementById('init-overlay').classList.add('done'), 200);
+
+  // Phase 2: Load historical seasons in background (non-blocking)
+  const historicalSeasons = ALL_SEASONS.slice(5);
+  let loaded = 0;
+  for (const yr of historicalSeasons) {
+    try {
+      const r = await fetch(`${CORS}${encodeURIComponent(BASE+yr+'.csv')}`);
+      if (!r.ok) throw new Error(r.status);
+      const text = await r.text();
+      parseRoster(text, yr);
+      loaded++;
+      // Update hint text
+      const hint = document.getElementById('search-hint');
+      if (hint && hint.textContent.includes('historical')) {
+        hint.textContent = `Historical data loading… ${yr} (${loaded}/${historicalSeasons.length})`;
+      }
+    } catch(e) { console.warn(`${yr} failed:`, e); }
+  }
+  allSeasonsLoaded = true;
+  const hint = document.getElementById('search-hint');
+  if (hint) hint.textContent = 'All seasons loaded · 2001–present';
+}
+
+function parseRoster(csv, season) {
+  const lines = csv.split('\n');
+  if (lines.length < 2) return;
+  const headers = splitCSVLine(lines[0]);
+  const col = k => headers.indexOf(k);
+
+  const C = {
+    gsis:      col('gsis_id'),
+    name:      col('full_name'),
+    pos:       col('position'),
+    dcPos:     col('depth_chart_position'),
+    team:      col('team'),
+    status:    col('status'),
+    birth:     col('birth_date'),
+    height:    col('height'),
+    weight:    col('weight'),
+    college:   col('college'),
+    espn:      col('espn_id'),
+    pff:       col('pff_id'),
+    gsisit:    col('gsis_it_id'),
+    entry:     col('entry_year'),
+    dclub:     col('draft_club'),
+    dnum:      col('draft_number'),
+    headshot:  col('headshot_url'),
+  };
+
+  for (let i = 1; i < lines.length; i++) {
+    if (!lines[i].trim()) continue;
+    const cols = splitCSVLine(lines[i]);
+    const gsis = cols[C.gsis]||'';
+    if (!gsis || gsis==='NA') continue;
+
+    const pos   = cols[C.pos]||'';
+    const dcPos = cols[C.dcPos]||'';
+    const group = idpGroup(pos, dcPos);
+    if (!group) continue; // skip non-IDP
+
+    const existing = players.get(gsis);
+    const entry = {
+      gsis_id:      gsis,
+      full_name:    cols[C.name]||'',
+      position:     group,        // DL / LB / DB
+      detail_pos:   dcPos||pos,   // detailed position
+      team:         cols[C.team]||'',
+      status:       cols[C.status]||'',
+      birth_date:   cols[C.birth]||'',
+      height:       cols[C.height]||'',
+      weight:       cols[C.weight]||'',
+      college:      cols[C.college]||'',
+      espn_id:      cols[C.espn]||'',
+      pff_id:       cols[C.pff]||'',
+      gsis_it_id:   cols[C.gsisit]||'',
+      entry_year:   cols[C.entry]||'',
+      draft_club:   cols[C.dclub]||'',
+      draft_number: cols[C.dnum]||'',
+      headshot_url: cols[C.headshot]||'',
+      latest_season: season,
+      seasons: [season],
+      teams: [cols[C.team]||''],
+    };
+
+    if (!existing) {
+      players.set(gsis, entry);
+    } else {
+      // Merge – keep latest season data
+      if (season > existing.latest_season) {
+        const prevSeasons = existing.seasons;
+        const prevTeams = existing.teams;
+        Object.assign(existing, entry);
+        existing.seasons = [...new Set([...prevSeasons, season])].sort();
+        existing.teams = [...new Set([...prevTeams, entry.team].filter(Boolean))];
+      } else {
+        if (!existing.seasons.includes(season)) existing.seasons.push(season);
+        if (entry.team && !existing.teams.includes(entry.team)) existing.teams.push(entry.team);
+      }
+    }
+  }
+}
+
+function splitCSVLine(line) {
+  const cols = [];
+  let cur='', inQ=false;
+  for (const ch of line) {
+    if (ch==='"') { inQ=!inQ; }
+    else if (ch===','&&!inQ) { cols.push(cur.trim()); cur=''; }
+    else cur+=ch;
+  }
+  cols.push(cur.trim());
+  return cols;
+}
+
+// ── SEARCH ──
+function onSearch() {
+  searchQ = document.getElementById('search-box').value.trim();
+  renderResults();
+}
+
+function setPos(el, pos) {
+  activePos = pos;
+  document.querySelectorAll('.fchip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  renderResults();
+}
+
+function renderResults() {
+  const list = document.getElementById('results-list');
+  const header = document.getElementById('results-header');
+  const hint = document.getElementById('search-hint');
+
+  if (searchQ.length < 3) {
+    header.style.display = 'none';
+    hint.textContent = 'Type at least 3 characters to search';
+    list.innerHTML = `<div class="state-box">
+      <div class="state-icon">🏈</div>
+      <p>Search for any <strong>IDP player</strong> across all seasons.<br>Results appear after 3 characters.</p>
+    </div>`;
+    return;
+  }
+
+  const q = searchQ.toLowerCase();
+  let results = Array.from(players.values()).filter(p => {
+    if (activePos && p.position !== activePos) return false;
+    return (p.full_name||'').toLowerCase().includes(q);
+  });
+
+  results.sort((a,b) => {
+    // Exact start match first
+    const aStart = (a.full_name||'').toLowerCase().startsWith(q);
+    const bStart = (b.full_name||'').toLowerCase().startsWith(q);
+    if (aStart && !bStart) return -1;
+    if (!aStart && bStart) return 1;
+    return (a.full_name||'').localeCompare(b.full_name||'');
+  });
+
+  const total = results.length;
+  results = results.slice(0, 50);
+
+  header.style.display = 'flex';
+  hint.textContent = '';
+  document.getElementById('results-count').innerHTML =
+    `<strong>${total.toLocaleString()}</strong> player${total!==1?'s':''} found${total>50?' · showing top 50':''}`;
+
+  if (!total) {
+    list.innerHTML = `<div class="state-box">
+      <div class="state-icon">🔍</div>
+      <p>No IDP players found for <strong>"${searchQ}"</strong>.<br>Try a different name or position filter.</p>
+    </div>`;
+    return;
+  }
+
+  list.innerHTML = results.map(p => playerRow(p)).join('');
+}
+
+function playerRow(p) {
+  // Current team display
+  let teamDisplay = p.team || '';
+  let teamBadgeClass = 'bt';
+  if (!teamDisplay || teamDisplay==='NA') {
+    // Check status
+    if (['RET','CUT','UFA'].includes(p.status) || p.latest_season < 2025) {
+      teamDisplay = p.status === 'RET' || p.latest_season < 2024 ? 'RET' : 'FA';
+    } else {
+      teamDisplay = 'FA';
+    }
+    teamBadgeClass = 'bs-FA';
+  }
+
+  const statusBadge = p.status && p.status!=='ACT'
+    ? `<span class="badge bs-${p.status||'FA'}">${p.status}</span>` : '';
+
+  const initials = (p.full_name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  const hasShot = p.headshot_url && p.headshot_url!=='NA' && p.headshot_url.startsWith('http');
+
+  const img = hasShot
+    ? `<img class="pr-headshot" src="${p.headshot_url}" alt="${p.full_name}"
+         onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+    : '';
+  const fb = `<div class="pr-headshot-fb" style="${hasShot?'display:none':''}">${initials}</div>`;
+
+  const detailPos = p.detail_pos && p.detail_pos!==p.position ? p.detail_pos : '';
+
+  return `
+  <a class="player-row" href="player.html?id=${encodeURIComponent(p.gsis_id)}">
+    ${img}${fb}
+    <div class="pr-info">
+      <div class="pr-name">${p.full_name||'–'}</div>
+      <div class="pr-sub">
+        <span>${p.entry_year ? `Since ${p.entry_year}` : '–'}</span>
+        ${p.college && p.college!=='NA' ? `<span class="pr-sub-sep"></span><span>${p.college}</span>` : ''}
+      </div>
+    </div>
+    <div class="pr-badges">
+      <span class="badge bp">${p.position}${detailPos?' · '+detailPos:''}</span>
+      <span class="badge ${teamBadgeClass}">${teamDisplay}</span>
+      ${statusBadge}
+    </div>
+    <div class="pr-arrow">›</div>
+  </a>`;
+}
+
+init();
+</script>
+</body>
+</html>

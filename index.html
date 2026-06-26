@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mics in Motion · IDP Hub</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #080c10;
+  --bg2: #0d1117;
+  --bg3: #161b22;
+  --border: #21262d;
+  --text: #e6edf3;
+  --muted: #7d8590;
+  --green: #238636;
+  --green-light: #2ea043;
+  --gold: #8B5E3C;
+  --gold-dim: #4a3020;
+  --gold: #1f6feb;
+  --red: #da3633;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* NAV */
+nav {
+  background: rgba(13,17,23,0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 40px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky; top: 0; z-index: 100;
+}
+.brand {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px;
+  letter-spacing: 3px;
+  color: #fff;
+}
+.brand em { color: var(--gold); font-style: normal; }
+.nav-links { display: flex; gap: 8px; }
+.nav-link {
+  font-size: 13px; font-weight: 500;
+  color: var(--muted);
+  text-decoration: none;
+  padding: 6px 14px;
+  border-radius: 6px;
+  transition: all .15s;
+}
+.nav-link:hover { color: var(--text); background: var(--bg3); }
+.nav-link.active { color: var(--text); }
+
+/* HERO */
+.hero {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 40px 60px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(35,134,54,.12) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 40% at 50% 100%, rgba(201,168,76,.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+.hero-eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--green-light);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.hero-eyebrow::before, .hero-eyebrow::after {
+  content: '';
+  width: 32px; height: 1px;
+  background: var(--green);
+}
+.hero-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(52px, 8vw, 96px);
+  letter-spacing: 6px;
+  line-height: .95;
+  color: #fff;
+  position: relative;
+}
+.hero-title span { color: var(--gold); }
+.hero-sub {
+  margin-top: 20px;
+  font-size: 15px;
+  color: var(--muted);
+  max-width: 480px;
+  line-height: 1.6;
+}
+
+/* CARDS */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  max-width: 960px;
+  width: 100%;
+  margin-top: 56px;
+  position: relative;
+}
+.hub-card {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 28px 28px 24px;
+  text-decoration: none;
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: all .2s;
+  position: relative;
+  overflow: hidden;
+}
+.hub-card::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--card-accent, var(--green));
+  transform: scaleX(0);
+  transition: transform .25s ease;
+}
+.hub-card:hover::after { transform: scaleX(1); }
+.hub-card:hover {
+  border-color: var(--card-accent, var(--green));
+  transform: translateY(-3px);
+  background: var(--bg2);
+}
+.hub-card.soon { opacity: .5; cursor: not-allowed; pointer-events: none; }
+.card-icon {
+  font-size: 28px;
+  width: 52px; height: 52px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.card-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--card-accent, var(--green));
+}
+.card-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px;
+  letter-spacing: 2px;
+  color: #fff;
+  line-height: 1;
+}
+.card-desc {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.6;
+  flex: 1;
+}
+.card-arrow {
+  font-size: 12px;
+  color: var(--card-accent, var(--green));
+  font-weight: 600;
+  letter-spacing: 1px;
+  margin-top: 4px;
+}
+.soon-badge {
+  position: absolute;
+  top: 14px; right: 14px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+/* FOOTER */
+footer {
+  text-align: center;
+  padding: 20px;
+  font-size: 11px;
+  color: var(--muted);
+  border-top: 1px solid var(--border);
+  letter-spacing: 1px;
+}
+
+@media(max-width:700px){
+  nav { padding: 0 20px; }
+  .hero { padding: 60px 20px 40px; }
+  .cards { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="brand">MICS IN <em>MOTION</em></div>
+  <div class="nav-links">
+    <a href="index.html" class="nav-link active">Home</a>
+    <a href="players.html" class="nav-link">Player DB</a>
+    <a href="#" class="nav-link">Team Hub</a>
+    <a href="#" class="nav-link">IDP Rankings</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="hero-eyebrow">IDP Intelligence Platform</div>
+  <div class="hero-title">MICS IN<br><span>MOTION</span></div>
+  <div class="hero-sub">Your internal scouting hub for IDP dynasty football. Live data, deep analysis, and team intelligence — all in one place.</div>
+
+  <div class="cards">
+    <a href="players.html" class="hub-card" style="--card-accent:#2ea043">
+      <div class="card-icon">🗃️</div>
+      <div class="card-label">Module 01</div>
+      <div class="card-title">Player Database</div>
+      <div class="card-desc">Search every IDP-relevant player across all seasons. Full roster history, ID mapping, draft info and headshots.</div>
+      <div class="card-arrow">Open Database →</div>
+    </a>
+    <div class="hub-card soon" style="--card-accent:#1f6feb">
+      <div class="soon-badge">Coming Soon</div>
+      <div class="card-icon">🏟️</div>
+      <div class="card-label">Module 02</div>
+      <div class="card-title">Team Hub</div>
+      <div class="card-desc">Deep dive into each NFL team's defensive tendencies, formations, snap counts and lineup patterns by season.</div>
+      <div class="card-arrow">Open Team Hub →</div>
+    </div>
+    <div class="hub-card soon" style="--card-accent:#8B5E3C">
+      <div class="soon-badge">Coming Soon</div>
+      <div class="card-icon">📊</div>
+      <div class="card-label">Module 03</div>
+      <div class="card-title">IDP Rankings</div>
+      <div class="card-desc">Dynamic IDP rankings combining snap data, defensive scheme tendencies and positional opportunity scoring.</div>
+      <div class="card-arrow">Open Rankings →</div>
+    </div>
+  </div>
+</div>
+
+<footer>MICS IN MOTION · IDP HUB · Internal Use Only</footer>
+
+</body>
+</html>

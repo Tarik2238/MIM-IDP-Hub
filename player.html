@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Player · Mics in Motion</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#080c10; --bg2:#0d1117; --bg3:#161b22; --bg4:#1c2128;
+  --border:#21262d; --border2:#30363d;
+  --text:#e6edf3; --muted:#7d8590; --muted2:#9198a1;
+  --orange:#C4722A; --orange-dim:#7a4419; --orange-glow:rgba(196,114,42,.15);
+  --green:#238636; --green-light:#2ea043;
+  --red:#da3633;
+  --radius:8px;
+  --team-color:#C4722A;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;}
+
+/* NAV */
+nav{background:rgba(13,17,23,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 32px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.brand{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;color:#fff;text-decoration:none;}
+.brand em{color:var(--orange);font-style:normal;}
+.nav-mid{display:flex;gap:4px;}
+.nav-link{font-size:13px;font-weight:500;color:var(--muted);text-decoration:none;padding:6px 12px;border-radius:6px;transition:all .15s;}
+.nav-link:hover{color:var(--text);background:var(--bg3);}
+.nav-link.active{color:var(--orange);background:var(--orange-glow);}
+.nav-search-wrap{position:relative;}
+.nav-search{background:var(--bg3);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:'Inter',sans-serif;font-size:13px;padding:7px 34px 7px 13px;width:190px;outline:none;transition:all .2s;}
+.nav-search:focus{border-color:var(--orange);width:250px;box-shadow:0 0 0 3px var(--orange-glow);}
+.nav-search::placeholder{color:var(--muted);}
+.nav-si{position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none;font-size:15px;}
+.nav-res{position:absolute;top:calc(100% + 8px);right:0;width:310px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);z-index:200;box-shadow:0 8px 24px rgba(0,0,0,.5);display:none;max-height:340px;overflow-y:auto;}
+.nav-res.open{display:block;}
+.nri{display:flex;align-items:center;gap:10px;padding:10px 14px;text-decoration:none;color:var(--text);transition:background .1s;border-bottom:1px solid var(--border);}
+.nri:last-child{border-bottom:none;}
+.nri:hover{background:var(--bg4);}
+.nri-hs{width:34px;height:34px;border-radius:4px;object-fit:cover;object-position:top;background:var(--bg2);flex-shrink:0;}
+.nri-fb{width:34px;height:34px;border-radius:4px;background:var(--bg2);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:12px;color:var(--muted);}
+.nri-name{font-weight:600;font-size:13px;}
+.nri-sub{font-size:11px;color:var(--muted);margin-top:1px;}
+.nri-b{font-family:'Bebas Neue',sans-serif;font-size:10px;padding:1px 6px;border-radius:3px;background:var(--orange-glow);color:var(--orange);border:1px solid var(--orange-dim);margin-left:auto;flex-shrink:0;letter-spacing:1px;}
+
+/* BREADCRUMB */
+.breadcrumb{padding:9px 32px;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);border-bottom:1px solid var(--border);background:var(--bg2);}
+.breadcrumb a{color:var(--muted);text-decoration:none;}
+.breadcrumb a:hover{color:var(--text);}
+
+/* ── PLAYER HEADER ── */
+.player-header{position:relative;overflow:hidden;border-bottom:1px solid var(--border);}
+
+/* Color + gradient background */
+.ph-bg-color{position:absolute;inset:0;background:var(--team-color);opacity:.18;}
+.ph-bg-grad{position:absolute;inset:0;background:linear-gradient(90deg,rgba(8,12,16,.0) 0%,rgba(8,12,16,.7) 50%,rgba(8,12,16,1) 100%);}
+.ph-bg-grad2{position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,12,16,0) 0%,rgba(8,12,16,.5) 100%);}
+
+/* Large team logo watermark */
+.ph-logo-bg{
+  position:absolute;right:0;top:50%;transform:translateY(-50%);
+  height:110%;width:auto;opacity:.18;
+  filter:blur(2px) saturate(0.5);
+  object-fit:contain;pointer-events:none;
+}
+
+.ph-inner{
+  position:relative;z-index:1;
+  padding:40px 48px 36px;
+  display:flex;gap:36px;align-items:center;
+}
+
+/* Headshot */
+.ph-hs-wrap{flex-shrink:0;position:relative;}
+.ph-hs{
+  width:160px;height:160px;border-radius:12px;
+  object-fit:cover;object-position:top center;
+  border:3px solid rgba(255,255,255,.1);
+  background:var(--bg3);
+  box-shadow:0 12px 40px rgba(0,0,0,.6);
+}
+.ph-hs-fb{
+  width:160px;height:160px;border-radius:12px;
+  background:var(--bg3);border:3px solid rgba(255,255,255,.1);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Bebas Neue',sans-serif;font-size:58px;color:var(--muted);
+  box-shadow:0 12px 40px rgba(0,0,0,.6);
+}
+.ph-team-badge{
+  position:absolute;bottom:-8px;right:-8px;
+  width:42px;height:42px;border-radius:50%;
+  background:var(--bg2);border:3px solid var(--border);
+  object-fit:contain;padding:4px;
+  box-shadow:0 2px 8px rgba(0,0,0,.5);
+}
+
+/* Info */
+.ph-info{flex:1;min-width:0;}
+.ph-badges{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
+.badge{font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:1px;padding:4px 11px;border-radius:5px;}
+.bp{background:var(--orange-glow);color:var(--orange);border:1px solid var(--orange-dim);}
+.bt{background:rgba(46,160,67,.12);color:var(--green-light);border:1px solid rgba(46,160,67,.25);}
+.bfa{background:rgba(31,111,235,.1);color:#58a6ff;border:1px solid rgba(31,111,235,.2);}
+.bact{background:rgba(46,160,67,.12);color:var(--green-light);border:1px solid rgba(46,160,67,.25);}
+.binj{background:rgba(218,54,51,.12);color:var(--red);border:1px solid rgba(218,54,51,.25);}
+.bother{background:rgba(125,133,144,.1);color:var(--muted2);border:1px solid var(--border2);}
+.bnum{background:transparent;color:rgba(255,255,255,.45);border:1px solid rgba(255,255,255,.12);font-size:14px;padding:3px 10px;}
+
+.ph-name{font-family:'Bebas Neue',sans-serif;font-size:clamp(44px,5.5vw,72px);letter-spacing:3px;color:#fff;line-height:.95;margin-bottom:6px;text-shadow:0 2px 16px rgba(0,0,0,.6);}
+.ph-sub{font-size:16px;color:rgba(255,255,255,.55);font-weight:500;margin-bottom:22px;}
+
+.vitals{display:flex;gap:0;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.07);border-radius:var(--radius);overflow:hidden;backdrop-filter:blur(8px);width:fit-content;}
+.vit{padding:14px 24px;border-right:1px solid rgba(255,255,255,.05);text-align:center;}
+.vit:last-child{border-right:none;}
+.vit-val{font-family:'Bebas Neue',sans-serif;font-size:26px;color:#fff;line-height:1;}
+.vit-lbl{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.35);margin-top:4px;}
+
+.ph-extra{margin-top:16px;display:flex;gap:24px;flex-wrap:wrap;}
+.ph-ei{font-size:13px;color:rgba(255,255,255,.45);}
+.ph-ei strong{color:rgba(255,255,255,.75);font-weight:500;}
+
+/* MAIN */
+.main{padding:32px 48px 80px;}
+
+.section{margin-bottom:36px;}
+.sec-hdr{display:flex;align-items:center;gap:12px;margin-bottom:18px;padding-bottom:11px;border-bottom:1px solid var(--border);}
+.sec-title{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;color:#fff;}
+.sec-badge{font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);background:var(--bg3);border:1px solid var(--border);padding:3px 9px;border-radius:4px;}
+.sec-badge.live{color:var(--green-light);background:rgba(46,160,67,.08);border-color:rgba(46,160,67,.2);}
+.sec-badge.pending{color:var(--muted);;}
+
+/* CURRENT STATS */
+.cur-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:14px;}
+.cstat{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:20px 16px;text-align:center;transition:border-color .15s;}
+.cstat:hover{border-color:var(--orange);}
+.cstat-val{font-family:'Bebas Neue',sans-serif;font-size:38px;color:var(--orange);line-height:1;}
+.cstat-lbl{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-top:5px;}
+.stats-ph{background:var(--bg3);border:1px dashed var(--border2);border-radius:var(--radius);padding:40px;text-align:center;}
+.stats-ph p{color:var(--muted);font-size:13px;margin-top:8px;}
+
+/* CUMULATIVE */
+.cum-bar{display:flex;background:rgba(196,114,42,.07);border:1px solid rgba(196,114,42,.18);border-radius:var(--radius);overflow:hidden;margin-bottom:14px;}
+.cum-s{flex:1;padding:16px 12px;text-align:center;border-right:1px solid rgba(196,114,42,.1);}
+.cum-s:last-child{border-right:none;}
+.cum-v{font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--orange);line-height:1;}
+.cum-l{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(196,114,42,.55);margin-top:4px;}
+
+/* HISTORY TABLE */
+.hist-wrap{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);overflow:auto;}
+.hist-table{width:100%;border-collapse:collapse;min-width:800px;}
+.hist-table th{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);font-weight:600;padding:12px 16px;text-align:right;border-bottom:2px solid var(--border);white-space:nowrap;background:var(--bg4);}
+.hist-table th:first-child,.hist-table th:nth-child(2),.hist-table th:nth-child(3){text-align:left;}
+.hist-table td{padding:12px 16px;font-size:13px;border-bottom:1px solid var(--border);vertical-align:middle;text-align:right;}
+.hist-table td:first-child,.hist-table td:nth-child(2),.hist-table td:nth-child(3){text-align:left;}
+.hist-table tr:last-child td{border-bottom:none;}
+.hist-table tr:hover td{background:rgba(255,255,255,.02);}
+.hist-table tr.cur td{background:rgba(196,114,42,.04);}
+.hist-table tr.cur td:first-child{border-left:3px solid var(--orange);}
+.yr{font-family:'Bebas Neue',sans-serif;font-size:17px;color:#fff;}
+.now{font-size:9px;color:var(--orange);font-weight:700;letter-spacing:1px;margin-left:6px;vertical-align:middle;}
+.team-cell{display:flex;align-items:center;gap:8px;}
+.tl{width:22px;height:22px;object-fit:contain;}
+.sv{font-family:'Bebas Neue',sans-serif;font-size:15px;color:var(--text);}
+.sv.z{color:var(--muted);}
+.sv.hi{color:var(--orange);}
+.nd{color:var(--muted);font-size:11px;font-style:italic;}
+.hist-note{margin-top:8px;font-size:11px;color:var(--muted);text-align:right;}
+
+/* IDs */
+.id-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;}
+.id-box{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:16px;}
+.id-lbl{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:5px;}
+.id-val{font-family:'Bebas Neue',sans-serif;font-size:17px;color:var(--orange);word-break:break-all;}
+.id-val.mt{color:var(--muted);font-size:13px;font-family:'Inter',sans-serif;font-style:italic;}
+.id-src{font-size:10px;color:var(--muted);margin-top:3px;}
+
+/* LOADING */
+#pg-load{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:300;gap:14px;}
+#pg-load.done{display:none;}
+.pl-t{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:4px;color:var(--orange);}
+.pl-s{font-size:11px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;}
+.spinner{width:32px;height:32px;border:3px solid var(--border2);border-top-color:var(--orange);border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+@media(max-width:900px){
+  nav,.breadcrumb,.main{padding-left:20px;padding-right:20px;}
+  .ph-inner{padding:28px 20px;flex-direction:column;gap:20px;}
+  .ph-hs,.ph-hs-fb{width:120px;height:120px;}
+  .ph-name{font-size:clamp(36px,8vw,56px);}
+  .vitals{flex-wrap:wrap;}
+  .vit{padding:11px 16px;}
+  .cur-grid{grid-template-columns:repeat(3,1fr);}
+}
+</style>
+</head>
+<body>
+
+<div id="pg-load">
+  <div class="spinner"></div>
+  <div class="pl-t">LOADING PLAYER</div>
+  <div class="pl-s" id="pl-s">Connecting…</div>
+</div>
+
+<nav>
+  <a href="index.html" class="brand">MICS IN <em>MOTION</em></a>
+  <div class="nav-mid">
+    <a href="index.html" class="nav-link">Home</a>
+    <a href="players.html" class="nav-link active">Player DB</a>
+    <a href="#" class="nav-link">Team Hub</a>
+    <a href="#" class="nav-link">Rankings</a>
+  </div>
+  <div class="nav-search-wrap">
+    <input class="nav-search" id="nav-search" type="text" placeholder="Search player…"
+      oninput="onNavSearch()" autocomplete="off">
+    <span class="nav-si">⌕</span>
+    <div class="nav-res" id="nav-res"></div>
+  </div>
+</nav>
+
+<div class="breadcrumb">
+  <a href="index.html">Home</a><span>›</span>
+  <a href="players.html">Player Database</a><span>›</span>
+  <span id="bc-name">–</span>
+</div>
+
+<!-- PLAYER HEADER -->
+<div id="player-header" style="display:none" class="player-header">
+  <div class="ph-bg-color" id="ph-bg-color"></div>
+  <img class="ph-logo-bg" id="ph-logo-bg" src="" alt="" onerror="this.style.display='none'">
+  <div class="ph-bg-grad"></div>
+  <div class="ph-bg-grad2"></div>
+  <div class="ph-inner">
+    <div class="ph-hs-wrap">
+      <img id="ph-hs" class="ph-hs" src="" alt=""
+        onerror="this.style.display='none';document.getElementById('ph-fb').style.display='flex'">
+      <div id="ph-fb" class="ph-hs-fb" style="display:none"></div>
+      <img id="ph-tl" class="ph-team-badge" src="" alt="" onerror="this.style.display='none'">
+    </div>
+    <div class="ph-info">
+      <div class="ph-badges" id="ph-badges"></div>
+      <div class="ph-name" id="ph-name"></div>
+      <div class="ph-sub" id="ph-sub-team"></div>
+      <div class="vitals">
+        <div class="vit"><div class="vit-val" id="v-ht">–</div><div class="vit-lbl">Height</div></div>
+        <div class="vit"><div class="vit-val" id="v-wt">–</div><div class="vit-lbl">Weight</div></div>
+        <div class="vit"><div class="vit-val" id="v-ag">–</div><div class="vit-lbl">Age</div></div>
+        <div class="vit"><div class="vit-val" id="v-ex">–</div><div class="vit-lbl">NFL Exp</div></div>
+        <div class="vit"><div class="vit-val" id="v-dp">–</div><div class="vit-lbl">Draft Pick</div></div>
+      </div>
+      <div class="ph-extra" id="ph-extra"></div>
+    </div>
+  </div>
+</div>
+
+<div class="main" id="main" style="display:none">
+
+  <!-- CURRENT SEASON -->
+  <div class="section">
+    <div class="sec-hdr">
+      <div class="sec-title" id="cs-title">2026 Stats</div>
+      <div class="sec-badge pending" id="cs-badge">Loading…</div>
+    </div>
+    <div id="cs-wrap"><div class="stats-ph"><p>Loading stats…</p></div></div>
+  </div>
+
+  <!-- CAREER HISTORY -->
+  <div class="section">
+    <div class="sec-hdr">
+      <div class="sec-title">Career History</div>
+      <div class="sec-badge" id="hist-badge">–</div>
+    </div>
+    <div class="cum-bar" id="cum-bar" style="display:none"></div>
+    <div class="hist-wrap">
+      <table class="hist-table">
+        <thead><tr>
+          <th>Season</th><th>Team</th><th>Pos</th>
+          <th>GP</th><th>Solo</th><th>Ast</th><th>TKL</th>
+          <th>TFL</th><th>SK</th><th>QBH</th><th>HUR</th>
+          <th>PBU</th><th>INT</th><th>FF</th><th>TD</th>
+          <th>Pts</th>
+        </tr></thead>
+        <tbody id="hist-body"></tbody>
+      </table>
+    </div>
+    <div class="hist-note" id="hist-note"></div>
+  </div>
+
+  <!-- IDs -->
+  <div class="section">
+    <div class="sec-hdr">
+      <div class="sec-title">Player IDs</div>
+      <div class="sec-badge">Reference</div>
+    </div>
+    <div class="id-grid" id="id-grid"></div>
+  </div>
+</div>
+
+<script>
+const SLEEPER_ALL   = 'https://api.sleeper.app/v1/players/nfl';
+const SLEEPER_STATS = (id,yr) => `https://corsproxy.io/?url=${encodeURIComponent('https://api.sleeper.com/stats/nfl/player/'+id+'?season_type=regular&season='+yr+'&grouping=season')}`;
+const LEAGUE_ID     = '1265652443362889728';
+const LEAGUE_MATCHUPS = (yr,wk) => `https://api.sleeper.app/v1/league/${LEAGUE_ID}/matchups/${wk}`;
+// Try multiple proxies for nflverse (corsproxy.io gives 403 on GitHub releases)
+const NFLVERSE_CSV = yr => {
+  const base = 'https://github.com/nflverse/nflverse-data/releases/download/rosters/roster_'+yr+'.csv';
+  return `https://api.allorigins.win/raw?url=${encodeURIComponent(base)}`;
+};
+
+const CACHE_KEY = 'mim_sleeper_players';
+const CACHE_TS  = 'mim_sleeper_ts';
+const CACHE_TTL = 23*60*60*1000;
+const CUR_YEAR  = new Date().getFullYear();
+
+const ESPN_A = {ARI:'ari',ATL:'atl',BAL:'bal',BUF:'buf',CAR:'car',CHI:'chi',CIN:'cin',CLE:'cle',DAL:'dal',DEN:'den',DET:'det',GB:'gb',HOU:'hou',IND:'ind',JAX:'jax',KC:'kc',LAC:'lac',LAR:'lar',LA:'lar',LV:'lv',MIA:'mia',MIN:'min',NE:'ne',NO:'no',NYG:'nyg',NYJ:'nyj',PHI:'phi',PIT:'pit',SF:'sf',SEA:'sea',TB:'tb',TEN:'ten',WAS:'wsh'};
+const TEAM_N = {ARI:'Arizona Cardinals',ATL:'Atlanta Falcons',BAL:'Baltimore Ravens',BUF:'Buffalo Bills',CAR:'Carolina Panthers',CHI:'Chicago Bears',CIN:'Cincinnati Bengals',CLE:'Cleveland Browns',DAL:'Dallas Cowboys',DEN:'Denver Broncos',DET:'Detroit Lions',GB:'Green Bay Packers',HOU:'Houston Texans',IND:'Indianapolis Colts',JAX:'Jacksonville Jaguars',KC:'Kansas City Chiefs',LAC:'Los Angeles Chargers',LAR:'Los Angeles Rams',LA:'Los Angeles Rams',LV:'Las Vegas Raiders',MIA:'Miami Dolphins',MIN:'Minnesota Vikings',NE:'New England Patriots',NO:'New Orleans Saints',NYG:'New York Giants',NYJ:'New York Jets',PHI:'Philadelphia Eagles',PIT:'Pittsburgh Steelers',SF:'San Francisco 49ers',SEA:'Seattle Seahawks',TB:'Tampa Bay Buccaneers',TEN:'Tennessee Titans',WAS:'Washington Commanders'};
+const TEAM_C = {ARI:'#97233F',ATL:'#A71930',BAL:'#241773',BUF:'#00338D',CAR:'#0085CA',CHI:'#0B162A',CIN:'#FB4F14',CLE:'#FF3C00',DAL:'#003594',DEN:'#FB4F14',DET:'#0076B6',GB:'#203731',HOU:'#03202F',IND:'#002C5F',JAX:'#006778',KC:'#E31837',LAC:'#002A5E',LAR:'#003594',LA:'#003594',LV:'#888',MIA:'#008E97',MIN:'#4F2683',NE:'#002244',NO:'#9F8958',NYG:'#0B2265',NYJ:'#125740',PHI:'#004C54',PIT:'#FFB612',SF:'#AA0000',SEA:'#002244',TB:'#D50A0A',TEN:'#0C2340',WAS:'#5A1414'};
+
+const urlParams = new URLSearchParams(location.search);
+const TARGET_ID = urlParams.get('id') || '';
+
+let allPlayers = [];
+
+// ── STORE ──
+function store() {
+  try { localStorage.setItem('_t','1'); localStorage.removeItem('_t'); return localStorage; }
+  catch { return sessionStorage; }
+}
+
+// ── HELPERS ──
+function idpG(pos,dc) {
+  const p=(pos||'').toUpperCase(),d=(dc||'').toUpperCase();
+  const DL=new Set(['DE','DT','NT','EDGE','IDL','DL']);
+  const LB=new Set(['LB','ILB','MLB','OLB']);
+  const DB=new Set(['CB','FS','SS','S','DB','SAF']);
+  if(p==='OLB') return DB.has(d)?'DB':(DL.has(d)?'DL':'LB');
+  if(DL.has(p)&&!LB.has(p))return'DL'; if(LB.has(p))return'LB'; if(DB.has(p))return'DB';
+  if(DL.has(d))return'DL'; if(LB.has(d))return'LB'; if(DB.has(d))return'DB';
+  return pos||'DEF';
+}
+function fmtH(h) {
+  if(!h||h==='NA')return'–';
+  if(String(h).includes("'"))return h;
+  const n=parseInt(h); if(isNaN(n))return h;
+  return`${Math.floor(n/12)}'${n%12}"`;
+}
+function sc(v) {
+  const n=parseFloat(v);
+  if(isNaN(n)||n===0)return`<td class="sv z">–</td>`;
+  const fmt=n%1===0?n:n.toFixed(1);
+  return`<td class="sv${n>=10?' hi':''}">${fmt}</td>`;
+}
+function sub(t){document.getElementById('pl-s').textContent=t;}
+function tn(t){return TEAM_N[t]||(t||'Free Agent');}
+function ta(t){return ESPN_A[t]||(t||'').toLowerCase();}
+function logoUrl(t){return t?`https://a.espncdn.com/i/teamlogos/nfl/500/${ta(t)}.png`:'';}
+
+// ── NAV SEARCH ──
+function onNavSearch() {
+  const q=document.getElementById('nav-search').value.trim().toLowerCase();
+  const res=document.getElementById('nav-res');
+  if(q.length<2){res.classList.remove('open');return;}
+  const hits=allPlayers.filter(p=>(p.full_name||'').toLowerCase().includes(q)).slice(0,7);
+  if(!hits.length){res.classList.remove('open');return;}
+  res.innerHTML=hits.map(p=>{
+    const init=(p.full_name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    const hsUrl=p.espn_id?`https://a.espncdn.com/i/nfl/players/full/${p.espn_id}.png`
+      :`https://sleepercdn.com/content/nfl/players/${p.sleeper_id}.jpg`;
+    return`<a class="nri" href="player.html?id=${encodeURIComponent(p.sleeper_id)}">
+      <img class="nri-hs" src="${hsUrl}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+      <div class="nri-fb" style="display:none">${init}</div>
+      <div><div class="nri-name">${p.full_name}</div><div class="nri-sub">${p.position} · ${p.team||'FA'}</div></div>
+      <span class="nri-b">${p.position}</span>
+    </a>`;
+  }).join('');
+  res.classList.add('open');
+}
+document.addEventListener('click',e=>{if(!e.target.closest('.nav-search-wrap'))document.getElementById('nav-res').classList.remove('open');});
+
+// ── CSV PARSER ──
+function splitCSV(line){
+  const cols=[];let cur='',inQ=false;
+  for(const ch of line){if(ch==='"'){inQ=!inQ;}else if(ch===','&&!inQ){cols.push(cur.trim());cur='';}else cur+=ch;}
+  cols.push(cur.trim());return cols;
+}
+
+// ── LOAD ──
+async function loadPlayer() {
+  if(!TARGET_ID){sub('No player ID');return;}
+  sub('Checking cache…');
+
+  let p = null;
+  const cached = (() => {
+    try {
+      const s=store(), ts=s.getItem(CACHE_TS);
+      if(ts&&Date.now()-parseInt(ts)<CACHE_TTL){const r=s.getItem(CACHE_KEY);return r?JSON.parse(r):null;}
+    }catch{}return null;
+  })();
+
+  if(cached){
+    allPlayers=cached;
+    p=cached.find(x=>x.sleeper_id===TARGET_ID);
+  }
+
+  if(!p){
+    sub('Fetching from Sleeper…');
+    try{
+      const r=await fetch(SLEEPER_ALL);
+      if(!r.ok)throw new Error('HTTP '+r.status);
+      const data=await r.json();
+      // Build allPlayers for nav search
+      const DL=new Set(['DE','DT','NT','EDGE','IDL','DL']);
+      const LB=new Set(['LB','ILB','MLB','OLB']);
+      const DB=new Set(['CB','FS','SS','S','DB','SAF']);
+      allPlayers=Object.entries(data).filter(([,x])=>{const pos=(x.position||'').toUpperCase();return DL.has(pos)||LB.has(pos)||DB.has(pos);})
+        .map(([id,x])=>({sleeper_id:id,full_name:x.full_name||`${x.first_name||''} ${x.last_name||''}`.trim(),position:idpG(x.position,x.depth_chart_position),team:x.team||'',espn_id:x.espn_id||''}));
+      const raw=data[TARGET_ID];
+      if(!raw)throw new Error('Player not found in Sleeper');
+      p=buildP(TARGET_ID,raw);
+    }catch(e){sub('Error: '+e.message);console.error(e);return;}
+  }
+
+  // Enrich missing IDs
+  sub('Enriching IDs…');
+  await enrichIds(p);
+
+  renderPlayer(p);
+  loadAllStats(p);
+}
+
+function buildP(id,r){
+  return{
+    sleeper_id:id, gsis_id:r.gsis_id||'', pff_id:r.stats_id||'', espn_id:r.espn_id||'',
+    full_name:r.full_name||`${r.first_name||''} ${r.last_name||''}`.trim(),
+    first_name:r.first_name||'', last_name:r.last_name||'',
+    position:idpG(r.position,r.depth_chart_position),
+    detail_pos:r.depth_chart_position||r.position||'',
+    team:r.team||'', status:r.status||'', injury:r.injury_status||'',
+    number:r.number||'', age:r.age||'',
+    height:r.height||'', weight:r.weight||'',
+    college:r.college||'', years_exp:r.years_exp??'',
+    entry_year:r.years_exp!=null?(CUR_YEAR-r.years_exp):'',
+    birth_date:r.birth_date||'',
+    draft_number:r.metadata?.draft_number||r.draft_number||'',
+    draft_round:r.metadata?.draft_round||r.draft_round||'',
+    draft_club:r.metadata?.draft_club||r.draft_club||'',
+    gsis_src:'Sleeper', pff_src:'Sleeper',
+    headshot_url:r.metadata?.headshot_url||'',
+  };
+}
+
+// ── ENRICH IDs from nflverse CSVs ──
+async function enrichIds(p) {
+  if(p.gsis_id&&p.pff_id&&p.draft_number)return;
+  for(let yr=CUR_YEAR;yr>=Math.max(2015,CUR_YEAR-8);yr--){
+    try{
+      const r=await fetch(NFLVERSE_CSV(yr));
+      if(!r.ok)continue;
+      const text=await r.text();
+      const found=findInCSV(text,p);
+      if(found){
+        if(!p.gsis_id&&found.gsis_id){p.gsis_id=found.gsis_id;p.gsis_src=`nflverse ${yr}`;}
+        if(!p.pff_id&&found.pff_id){p.pff_id=found.pff_id;p.pff_src=`nflverse ${yr}`;}
+        if(!p.draft_number&&found.draft_number){p.draft_number=found.draft_number;p.draft_round=found.draft_round||'';}
+        if(!p.draft_club&&found.draft_club)p.draft_club=found.draft_club;
+        if(!p.headshot_url&&found.headshot_url)p.headshot_url=found.headshot_url;
+        if(p.gsis_id&&p.pff_id&&p.draft_number)break;
+      }
+    }catch(e){console.warn(`CSV ${yr}:`,e);}
+  }
+}
+
+function findInCSV(csv,p){
+  const lines=csv.split('\n');if(lines.length<2)return null;
+  const H=splitCSV(lines[0]);
+  const c=k=>H.indexOf(k);
+  const C={sl:c('sleeper_id'),gs:c('gsis_id'),pf:c('pff_id'),
+    nm:c('full_name'),db:c('birth_date'),cl:c('college'),
+    dn:c('draft_number'),dr:c('draft_round'),dc:c('draft_club')};
+  for(let i=1;i<lines.length;i++){
+    if(!lines[i].trim())continue;
+    const cols=splitCSV(lines[i]);
+    const slMatch=C.sl>=0&&cols[C.sl]===p.sleeper_id;
+    const nmMatch=C.nm>=0&&(cols[C.nm]||'').toLowerCase()===(p.full_name||'').toLowerCase();
+    const dbMatch=C.db>=0&&p.birth_date&&cols[C.db]===p.birth_date;
+    const clMatch=C.cl>=0&&p.college&&(cols[C.cl]||'').toLowerCase()===(p.college||'').toLowerCase();
+    if(slMatch||(nmMatch&&(dbMatch||clMatch))){
+      const hsCol=H.indexOf('headshot_url');
+      return{gsis_id:cols[C.gs]||'',pff_id:cols[C.pf]||'',
+        draft_number:cols[C.dn]||'',draft_round:cols[C.dr]||'',draft_club:cols[C.dc]||'',
+        headshot_url:hsCol>=0?cols[hsCol]||'':''};
+    }
+  }return null;
+}
+
+// ── RENDER ──
+function renderPlayer(p){
+  document.title=`${p.full_name} · Mics in Motion`;
+  document.getElementById('bc-name').textContent=p.full_name;
+
+  // Team color
+  const tc=TEAM_C[p.team]||'#C4722A';
+  document.documentElement.style.setProperty('--team-color',tc);
+  document.getElementById('ph-bg-color').style.background=tc;
+
+  // Logo watermark + team badge
+  const lUrl=logoUrl(p.team);
+  if(lUrl){
+    document.getElementById('ph-logo-bg').src=lUrl;
+    document.getElementById('ph-tl').src=lUrl;
+    document.getElementById('ph-tl').style.display='block';
+  }
+
+  // Headshot: try ESPN first (no CORS), fallback to Sleeper
+  const hsEl=document.getElementById('ph-hs');
+  const fbEl=document.getElementById('ph-fb');
+  fbEl.textContent=(p.full_name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+
+  // Headshot: sleepercdn works from GitHub Pages, fallback chain
+  const tryUrls = [
+    `https://sleepercdn.com/content/nfl/players/${p.sleeper_id}.jpg`,
+    p.headshot_url||'',
+    p.espn_id?`https://a.espncdn.com/combiner/i?img=/i/headshots/nfl/players/full/${p.espn_id}.png`:'',
+  ].filter(Boolean);
+  let urlIdx = 0;
+  hsEl.src = tryUrls[0];
+  hsEl.onerror = function(){
+    urlIdx++;
+    if(urlIdx < tryUrls.length){ this.src = tryUrls[urlIdx]; }
+    else { this.style.display='none'; fbEl.style.display='flex'; }
+  };
+
+  // Badges
+  const detail=p.detail_pos&&p.detail_pos!==p.position?` · ${p.detail_pos}`:'';
+  const teamDisp=p.team||'FA';
+  const tClass=p.team?'bt':'bfa';
+  let sBadge='';
+  if(p.status==='Active')sBadge=`<span class="badge bact">Active</span>`;
+  else if(p.injury)sBadge=`<span class="badge binj">${p.injury}</span>`;
+  else if(p.status)sBadge=`<span class="badge bother">${p.status}</span>`;
+
+  document.getElementById('ph-badges').innerHTML=`
+    <span class="badge bp">${p.position}${detail}</span>
+    <span class="badge ${tClass}">${teamDisp}</span>
+    ${sBadge}
+    ${p.number?`<span class="badge bnum">#${p.number}`:``}`;
+
+  document.getElementById('ph-name').textContent=p.full_name||'–';
+  document.getElementById('ph-sub-team').textContent=tn(p.team);
+
+  document.getElementById('v-ht').textContent=fmtH(p.height);
+  document.getElementById('v-wt').textContent=p.weight?`${p.weight} lbs`:'–';
+  document.getElementById('v-ag').textContent=p.age||'–';
+  document.getElementById('v-ex').textContent=p.years_exp!==''?`${p.years_exp}Y`:'–';
+
+  // Draft pick
+  let dp='UDFA';
+  if(p.draft_number)dp=`#${p.draft_number}`;
+  else if(!p.draft_club&&!p.entry_year)dp='–';
+  document.getElementById('v-dp').textContent=dp;
+
+  const extras=[
+    p.birth_date?`<span class="ph-ei"><strong>Born:</strong> ${p.birth_date}</span>`:'',
+    p.college?`<span class="ph-ei"><strong>College:</strong> ${p.college}</span>`:'',
+    p.entry_year?`<span class="ph-ei"><strong>NFL Entry:</strong> ${p.entry_year}</span>`:'',
+    p.draft_club&&p.draft_number?`<span class="ph-ei"><strong>Drafted:</strong> ${p.draft_club} · Rd ${p.draft_round||'?'} · Pick #${p.draft_number}</span>`:'',
+  ].filter(Boolean).join('');
+  document.getElementById('ph-extra').innerHTML=extras;
+
+  document.getElementById('cs-title').textContent=`${CUR_YEAR} Stats`;
+
+  // History skeleton
+  const startYr=parseInt(p.entry_year)||CUR_YEAR;
+  const seasons=[];
+  for(let y=CUR_YEAR;y>=startYr;y--)seasons.push(y);
+  window._P=p; window._S=seasons;
+  document.getElementById('hist-badge').textContent=`${seasons.length} Season${seasons.length!==1?'s':''}`;
+  renderHistRows(seasons,p,{},{});
+
+  renderIds(p);
+
+  document.getElementById('pg-load').classList.add('done');
+  document.getElementById('player-header').style.display='block';
+  document.getElementById('main').style.display='block';
+}
+
+function renderHistRows(seasons,p,statsMap,ptsMap){
+  const detail=p.detail_pos&&p.detail_pos!==p.position?` · ${p.detail_pos}`:'';
+  const tbody=document.getElementById('hist-body');
+  tbody.innerHTML=seasons.map(yr=>{
+    const isCur=yr===CUR_YEAR;
+    const s=statsMap[yr]||{};
+    const pts=ptsMap[yr]??null;
+    const hasStats=Object.keys(s).length>0;
+    const teamDisp=isCur?(p.team||'FA'):(s._team||'–');
+    const logo=teamDisp&&teamDisp!=='–'?`<img class="tl" src="${logoUrl(teamDisp)}" alt="" onerror="this.style.display='none'">`:'';
+    const stkl=s.def_st??s.def_solo??null;
+    const atkl=s.def_ast??null;
+    const tkl=stkl!==null&&atkl!==null?stkl+atkl:(s.def_tkl??null);
+    const ptsCell=pts!==null?`<td class="sv">${parseFloat(pts).toFixed(1)}</td>`:`<td class="nd">–</td>`;
+    return`<tr class="${isCur?'cur':''}">
+      <td class="yr">${yr}${isCur?`<span class="now">▶</span>`:''}</td>
+      <td><div class="team-cell">${logo}<span>${teamDisp}</span></div></td>
+      <td><span class="badge bp" style="font-size:10px">${p.position}${detail}</span></td>
+      ${sc(s.gp)}${sc(stkl)}${sc(atkl)}${sc(tkl)}
+      ${sc(s.def_tfl)}${sc(s.def_sack)}${sc(s.def_qb_hit)}${sc(s.def_hur)}
+      ${sc(s.def_pbu)}${sc(s.def_int)}${sc(s.def_ff)}${sc(s.def_td)}
+      ${ptsCell}
+    </tr>`;
+  }).join('');
+}
+
+// ── LOAD STATS ──
+async function loadAllStats(p){
+  const seasons=window._S||[];
+  const statsMap={},ptsMap={};
+  const cum={gp:0,stkl:0,atkl:0,tfl:0,sk:0,qbh:0,hur:0,pbu:0,int:0,ff:0,td:0};
+  let anyStats=false;
+
+  // Load stats for each season from Sleeper
+  for(const yr of seasons){
+    try{
+      const statsUrl = SLEEPER_STATS(p.sleeper_id, yr);
+      const r=await fetch(statsUrl);
+      if(!r.ok){ console.warn(`Stats ${yr}: HTTP ${r.status}`); continue; }
+      const text=await r.text();
+      if(!text||text==='null')continue;
+      let data;
+      try{ data=JSON.parse(text); }catch(e){ console.warn(`Stats ${yr}: bad JSON`); continue; }
+      if(!data||typeof data!=='object'||!Object.keys(data).length)continue;
+      // Stats are nested: data.stats contains the actual stats object
+      const s = data.stats || data;
+      console.log(`Stats ${yr} OK, keys:`, Object.keys(s).filter(k=>k.startsWith('def')).slice(0,8));
+      statsMap[yr]=s; anyStats=true;
+      cum.gp  +=parseFloat(s.gp||0);
+      cum.stkl+=parseFloat(s.def_st||s.def_solo||0);
+      cum.atkl+=parseFloat(s.def_ast||0);
+      cum.tfl +=parseFloat(s.def_tfl||0);
+      cum.sk  +=parseFloat(s.def_sack||0);
+      cum.qbh +=parseFloat(s.def_qb_hit||0);
+      cum.hur +=parseFloat(s.def_hur||0);
+      cum.pbu +=parseFloat(s.def_pbu||0);
+      cum.int +=parseFloat(s.def_int||0);
+      cum.ff  +=parseFloat(s.def_ff||0);
+      cum.td  +=parseFloat(s.def_td||0);
+    }catch(e){console.warn(`Stats ${yr}:`,e);}
+  }
+
+  // Load fantasy points from league matchups for current season
+  // We fetch week by week and aggregate
+  if(p.sleeper_id){
+    try{
+      const stateR=await fetch('https://api.sleeper.app/v1/state/nfl');
+      const state=await stateR.json();
+      const curWk=Math.min(state.week||1, state.display_week||1, 18);
+      let totalPts=0; let gotPts=false;
+      for(let wk=1;wk<=curWk;wk++){
+        try{
+          const mr=await fetch(LEAGUE_MATCHUPS(CUR_YEAR,wk));
+          if(!mr.ok)continue;
+          const matchups=await mr.json();
+          // matchups is array of {players_points:{player_id:pts,...},...}
+          for(const m of matchups){
+            const pp=m.players_points||{};
+            if(pp[p.sleeper_id]!==undefined){
+              totalPts+=parseFloat(pp[p.sleeper_id]||0);
+              gotPts=true;
+            }
+          }
+        }catch{}
+      }
+      if(gotPts)ptsMap[CUR_YEAR]=totalPts;
+    }catch(e){console.warn('League pts:',e);}
+  }
+
+  // Current season card
+  const csWrap=document.getElementById('cs-wrap');
+  const csBadge=document.getElementById('cs-badge');
+  const curS=statsMap[CUR_YEAR];
+  if(curS&&Object.keys(curS).length){
+    csBadge.textContent='Live'; csBadge.className='sec-badge live';
+    const defs=[
+      {l:'GP',v:curS.gp},{l:'Solo',v:curS.def_st??curS.def_solo},{l:'Ast',v:curS.def_ast},
+      {l:'TFL',v:curS.def_tfl},{l:'Sacks',v:curS.def_sack},{l:'QBH',v:curS.def_qb_hit},
+      {l:'Hurries',v:curS.def_hur},{l:'PBU',v:curS.def_pbu},{l:'INT',v:curS.def_int},
+      {l:'FF',v:curS.def_ff},{l:'TD',v:curS.def_td},
+      ...(ptsMap[CUR_YEAR]!==undefined?[{l:'Fantasy Pts',v:ptsMap[CUR_YEAR]}]:[]),
+    ].filter(s=>s.v!==undefined&&s.v!==null&&parseFloat(s.v)!==0);
+    csWrap.innerHTML=defs.length
+      ?`<div class="cur-grid">${defs.map(s=>{const n=parseFloat(s.v);return`<div class="cstat"><div class="cstat-val">${n%1===0?n:n.toFixed(1)}</div><div class="cstat-lbl">${s.l}</div></div>`;}).join('')}</div>`
+      :`<div class="stats-ph"><p>No stats recorded yet for ${CUR_YEAR}.</p></div>`;
+  } else {
+    csBadge.textContent='Pending'; csBadge.className='sec-badge pending';
+    csWrap.innerHTML=`<div class="stats-ph"><p>No stats available for ${CUR_YEAR} yet.</p></div>`;
+  }
+
+  // Cumulative
+  if(anyStats){
+    const cumBar=document.getElementById('cum-bar');
+    cumBar.style.display='flex';
+    const fmt=v=>v%1===0?v:v.toFixed(1);
+    cumBar.innerHTML=[
+      {l:'Career GP',v:fmt(cum.gp)},{l:'Solo Tkl',v:fmt(cum.stkl)},{l:'Ast Tkl',v:fmt(cum.atkl)},
+      {l:'TFL',v:fmt(cum.tfl)},{l:'Sacks',v:fmt(cum.sk)},{l:'QBH',v:fmt(cum.qbh)},
+      {l:'Hurries',v:fmt(cum.hur)},{l:'PBU',v:fmt(cum.pbu)},
+      {l:'INT',v:fmt(cum.int)},{l:'FF',v:fmt(cum.ff)},{l:'TD',v:fmt(cum.td)},
+    ].map(s=>`<div class="cum-s"><div class="cum-v">${s.v}</div><div class="cum-l">${s.l}</div></div>`).join('');
+  }
+
+  renderHistRows(window._S,p,statsMap,ptsMap);
+  document.getElementById('hist-note').textContent=
+    anyStats?'Stats via Sleeper · Fantasy Pts via league matchups · Roster data from nflverse'
+            :'Stats pending · Roster data from nflverse';
+}
+
+function renderIds(p){
+  document.getElementById('id-grid').innerHTML=[
+    {l:'Sleeper ID',v:p.sleeper_id,s:'Sleeper'},
+    {l:'GSIS ID',v:p.gsis_id,s:p.gsis_src},
+    {l:'PFF ID',v:p.pff_id,s:p.pff_src},
+    {l:'ESPN ID',v:p.espn_id,s:'Sleeper'},
+  ].map(d=>`<div class="id-box">
+    <div class="id-lbl">${d.l}</div>
+    <div class="id-val ${d.v?'':'mt'}">${d.v||'Not available'}</div>
+    ${d.v?`<div class="id-src">Source: ${d.s}</div>`:''}
+  </div>`).join('');
+}
+
+loadPlayer();
+</script>
+</body>
+</html>

@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mics in Motion · IDP Hub</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #080c10;
+  --bg2: #0d1117;
+  --bg3: #161b22;
+  --border: #21262d;
+  --text: #e6edf3;
+  --muted: #7d8590;
+  --green: #C4722A;
+  --green-light: #C4722A;
+  --orange: #C4722A;
+  --orange-dim: #7a4419;
+  --orange: #C4722A;
+  --red: #da3633;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* NAV */
+nav {
+  background: rgba(13,17,23,0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 40px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky; top: 0; z-index: 100;
+}
+.brand {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px;
+  letter-spacing: 3px;
+  color: #fff;
+}
+.brand em { color: var(--orange); font-style: normal; }
+.nav-links { display: flex; gap: 8px; }
+.nav-link {
+  font-size: 13px; font-weight: 500;
+  color: var(--muted);
+  text-decoration: none;
+  padding: 6px 14px;
+  border-radius: 6px;
+  transition: all .15s;
+}
+.nav-link:hover { color: var(--text); background: var(--bg3); }
+.nav-link.active { color: var(--text); }
+
+/* HERO */
+.hero {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 40px 60px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(35,134,54,.12) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 40% at 50% 100%, rgba(201,168,76,.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+.hero-eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--green-light);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.hero-eyebrow::before, .hero-eyebrow::after {
+  content: '';
+  width: 32px; height: 1px;
+  background: var(--green);
+}
+.hero-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(52px, 8vw, 96px);
+  letter-spacing: 6px;
+  line-height: .95;
+  color: #fff;
+  position: relative;
+}
+.hero-title span { color: var(--orange); }
+.hero-sub {
+  margin-top: 20px;
+  font-size: 15px;
+  color: var(--muted);
+  max-width: 480px;
+  line-height: 1.6;
+}
+
+/* CARDS */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  max-width: 960px;
+  width: 100%;
+  margin-top: 56px;
+  position: relative;
+}
+.hub-card {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 28px 28px 24px;
+  text-decoration: none;
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: all .2s;
+  position: relative;
+  overflow: hidden;
+}
+.hub-card::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--card-accent, var(--green));
+  transform: scaleX(0);
+  transition: transform .25s ease;
+}
+.hub-card:hover::after { transform: scaleX(1); }
+.hub-card:hover {
+  border-color: var(--card-accent, var(--green));
+  transform: translateY(-3px);
+  background: var(--bg2);
+}
+.hub-card.soon { opacity: .5; cursor: not-allowed; pointer-events: none; }
+.card-icon {
+  font-size: 28px;
+  width: 52px; height: 52px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.card-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--card-accent, var(--green));
+}
+.card-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px;
+  letter-spacing: 2px;
+  color: #fff;
+  line-height: 1;
+}
+.card-desc {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.6;
+  flex: 1;
+}
+.card-arrow {
+  font-size: 12px;
+  color: var(--card-accent, var(--green));
+  font-weight: 600;
+  letter-spacing: 1px;
+  margin-top: 4px;
+}
+.soon-badge {
+  position: absolute;
+  top: 14px; right: 14px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+/* FOOTER */
+footer {
+  text-align: center;
+  padding: 20px;
+  font-size: 11px;
+  color: var(--muted);
+  border-top: 1px solid var(--border);
+  letter-spacing: 1px;
+}
+
+/* AUTH WIDGET */
+.auth-wrap { display: flex; align-items: center; gap: 10px; }
+.auth-btn {
+  font-size: 12px; font-weight: 600; letter-spacing: .5px;
+  color: var(--text); background: var(--bg3); border: 1px solid var(--border);
+  padding: 7px 16px; border-radius: 6px; cursor: pointer; transition: all .15s;
+  font-family: 'Inter', sans-serif;
+}
+.auth-btn:hover { border-color: var(--orange); }
+.auth-user { display: flex; align-items: center; gap: 10px; }
+.auth-avatar {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: var(--orange); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Bebas Neue', sans-serif; font-size: 14px;
+}
+.auth-name { font-size: 13px; font-weight: 500; color: var(--text); }
+.auth-logout { font-size: 11px; color: var(--muted); background: none; border: none; cursor: pointer; text-decoration: underline; font-family: 'Inter', sans-serif; }
+.auth-logout:hover { color: var(--text); }
+
+/* MODAL */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.7);
+  display: none; align-items: center; justify-content: center; z-index: 500;
+  backdrop-filter: blur(3px);
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--bg3); border: 1px solid var(--border); border-radius: 12px;
+  padding: 32px; width: 100%; max-width: 360px; position: relative;
+}
+.modal-close {
+  position: absolute; top: 14px; right: 16px; background: none; border: none;
+  color: var(--muted); font-size: 20px; cursor: pointer; line-height: 1;
+}
+.modal-close:hover { color: var(--text); }
+.modal-title {
+  font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: 2px;
+  color: #fff; margin-bottom: 4px;
+}
+.modal-tabs { display: flex; gap: 4px; margin: 16px 0 20px; border-bottom: 1px solid var(--border); }
+.modal-tab {
+  flex: 1; text-align: center; padding: 8px; font-size: 12px; font-weight: 600;
+  color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent;
+  letter-spacing: 1px; text-transform: uppercase;
+}
+.modal-tab.active { color: var(--orange); border-bottom-color: var(--orange); }
+.modal-field { margin-bottom: 14px; }
+.modal-field label { display: block; font-size: 11px; color: var(--muted); margin-bottom: 6px; letter-spacing: .5px; }
+.modal-field input {
+  width: 100%; background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 6px; padding: 10px 12px; color: var(--text); font-size: 13px;
+  font-family: 'Inter', sans-serif; outline: none;
+}
+.modal-field input:focus { border-color: var(--orange); }
+.modal-submit {
+  width: 100%; background: var(--orange); color: #fff; border: none;
+  padding: 11px; border-radius: 6px; font-weight: 600; font-size: 13px;
+  cursor: pointer; margin-top: 6px; font-family: 'Inter', sans-serif;
+}
+.modal-submit:hover { opacity: .9; }
+.modal-submit:disabled { opacity: .5; cursor: not-allowed; }
+.modal-error { color: var(--red); font-size: 12px; margin-top: 10px; display: none; }
+.modal-error.show { display: block; }
+.modal-pane { display: none; }
+.modal-pane.active { display: block; }
+
+@media(max-width:700px){
+  nav { padding: 0 20px; }
+  .hero { padding: 60px 20px 40px; }
+  .cards { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="brand">MICS IN <em>MOTION</em></div>
+  <div class="nav-links">
+    <a href="index.html" class="nav-link active">Home</a>
+    <a href="players.html" class="nav-link">Player DB</a>
+    <a href="#" class="nav-link">Team Hub</a>
+    <a href="rankings.html" class="nav-link">IDP Rankings</a>
+  </div>
+  <div class="auth-wrap" id="auth-wrap">
+    <button class="auth-btn" id="auth-open-btn">Login</button>
+  </div>
+</nav>
+
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <button class="modal-close" id="modal-close-btn">&times;</button>
+    <div class="modal-title">Login</div>
+    <div class="modal-field" style="margin-top:16px;"><label>Benutzername</label><input type="text" id="login-email" autocapitalize="off"></div>
+    <div class="modal-field"><label>Passwort</label><input type="password" id="login-pw"></div>
+    <button class="modal-submit" id="login-submit">Anmelden</button>
+    <div class="modal-error" id="modal-error"></div>
+  </div>
+</div>
+
+<div class="hero">
+  <div class="hero-eyebrow">IDP Intelligence Platform</div>
+  <div class="hero-title">MICS IN<br><span>MOTION</span></div>
+  <div class="hero-sub">Your internal scouting hub for IDP dynasty football. Live data, deep analysis, and team intelligence — all in one place.</div>
+
+  <div class="cards">
+    <a href="players.html" class="hub-card" style="--card-accent:#C4722A">
+      <div class="card-icon">🗃️</div>
+      <div class="card-label">Module 01</div>
+      <div class="card-title">Player Database</div>
+      <div class="card-desc">Search every IDP-relevant player across all seasons. Full roster history, ID mapping, draft info and headshots.</div>
+      <div class="card-arrow">Open Database →</div>
+    </a>
+    <div class="hub-card soon" style="--card-accent:#C4722A">
+      <div class="soon-badge">Coming Soon</div>
+      <div class="card-icon">🏟️</div>
+      <div class="card-label">Module 02</div>
+      <div class="card-title">Team Hub</div>
+      <div class="card-desc">Deep dive into each NFL team's defensive tendencies, formations, snap counts and lineup patterns by season.</div>
+      <div class="card-arrow">Open Team Hub →</div>
+    </div>
+    <a href="rankings.html" class="hub-card" style="--card-accent:#C4722A">
+      <div class="card-icon">📊</div>
+      <div class="card-label">Module 03</div>
+      <div class="card-title">IDP Rankings</div>
+      <div class="card-desc">Eigene Tier-Rankings per Drag & Drop erstellen. Login erforderlich zum Bearbeiten, für alle sichtbar.</div>
+      <div class="card-arrow">Open Rankings →</div>
+    </a>
+  </div>
+</div>
+
+<footer>MICS IN MOTION · IDP HUB · Internal Use Only</footer>
+
+<script type="module">
+import { watchAuth, loginUser, logoutUser } from './firebase-init.js';
+
+const authWrap = document.getElementById('auth-wrap');
+const overlay = document.getElementById('modal-overlay');
+const errEl = document.getElementById('modal-error');
+
+document.getElementById('auth-open-btn').addEventListener('click', () => overlay.classList.add('open'));
+document.getElementById('modal-close-btn').addEventListener('click', () => overlay.classList.remove('open'));
+overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('open'); });
+
+function showErr(msg) { errEl.textContent = msg; errEl.classList.add('show'); }
+
+document.getElementById('login-submit').addEventListener('click', async () => {
+  errEl.classList.remove('show');
+  try {
+    await loginUser(document.getElementById('login-email').value, document.getElementById('login-pw').value);
+    overlay.classList.remove('open');
+  } catch (e) { showErr(mapAuthError(e)); }
+});
+
+function mapAuthError(e) {
+  const c = e.code || '';
+  if (c.includes('invalid-credential') || c.includes('wrong-password') || c.includes('user-not-found')) return 'Benutzername oder Passwort falsch.';
+  return 'Fehler: ' + (e.message || 'unbekannt');
+}
+
+watchAuth(user => {
+  if (user) {
+    const initial = (user.displayName || user.email || '?')[0].toUpperCase();
+    authWrap.innerHTML = `
+      <div class="auth-user">
+        <div class="auth-avatar">${initial}</div>
+        <div>
+          <div class="auth-name">${user.displayName || user.email}</div>
+          <button class="auth-logout" id="logout-btn">Logout</button>
+        </div>
+      </div>`;
+    document.getElementById('logout-btn').addEventListener('click', () => logoutUser());
+  } else {
+    authWrap.innerHTML = `<button class="auth-btn" id="auth-open-btn">Login</button>`;
+    document.getElementById('auth-open-btn').addEventListener('click', () => overlay.classList.add('open'));
+  }
+});
+</script>
+
+</body>
+</html>

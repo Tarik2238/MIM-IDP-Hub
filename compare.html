@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spieler-Vergleich · Mics in Motion</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#080c10;--bg2:#0d1117;--bg3:#161b22;--bg4:#1c2128;--border:#21262d;--border2:#30363d;
+--text:#e6edf3;--muted:#7d8590;--orange:#C4722A;--orange-dim:#7a4419;--orange-glow:rgba(196,114,42,.15);--red:#da3633;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;}
+nav{background:rgba(13,17,23,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 32px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.brand{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;color:#fff;text-decoration:none;}
+.brand em{color:var(--orange);font-style:normal;}
+.nav-mid{display:flex;gap:4px;}
+.nav-link{font-size:13px;font-weight:500;color:var(--muted);text-decoration:none;padding:6px 12px;border-radius:6px;transition:all .15s;}
+.nav-link:hover{color:var(--text);background:var(--bg3);}
+
+.page-hdr{padding:28px 32px 20px;border-bottom:1px solid var(--border);background:var(--bg2);}
+.page-title{font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:2px;color:#fff;}
+.page-title span{color:var(--orange);}
+.back-link{font-size:12px;color:var(--muted);text-decoration:none;display:inline-block;margin-top:8px;}
+.back-link:hover{color:var(--orange);}
+
+.compare-grid{padding:32px;display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;max-width:1200px;margin:0 auto;}
+.empty-state{padding:80px 32px;text-align:center;color:var(--muted);}
+.empty-state h3{font-family:'Bebas Neue',sans-serif;font-size:24px;color:#fff;letter-spacing:1px;margin-bottom:10px;}
+
+.cmp-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:22px;}
+.cmp-hdr{display:flex;align-items:center;gap:14px;margin-bottom:18px;}
+.cmp-hs,.cmp-hs-fb{width:64px;height:64px;border-radius:10px;object-fit:cover;object-position:top;background:var(--bg3);flex-shrink:0;}
+.cmp-hs-fb{display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--muted);}
+.cmp-name{font-size:18px;font-weight:700;color:#fff;}
+.cmp-sub{font-size:13px;color:var(--muted);margin-top:3px;}
+.cmp-loading{font-size:13px;color:var(--muted);font-style:italic;padding:12px 0;}
+.cmp-pts-row{display:flex;gap:10px;margin-bottom:18px;}
+.cmp-pts-cell{flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:12px 8px;text-align:center;}
+.cmp-pts-year{font-size:11px;color:var(--muted);letter-spacing:.5px;}
+.cmp-pts-val{font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--orange);margin-top:4px;}
+.cmp-stats-title{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;}
+.cmp-stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;margin-bottom:18px;}
+.cmp-stat{display:flex;justify-content:space-between;font-size:13px;border-bottom:1px dashed var(--border);padding-bottom:4px;}
+.cmp-stat-label{color:var(--muted);}
+.cmp-stat-val{font-weight:600;}
+.cmp-profile-link{display:block;text-align:center;font-size:13px;font-weight:600;color:var(--orange);text-decoration:none;padding:10px;border:1px solid var(--orange-dim);border-radius:8px;transition:all .15s;}
+.cmp-profile-link:hover{background:var(--orange-glow);}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="brand">MICS IN <em>MOTION</em></a>
+  <div class="nav-mid">
+    <a href="index.html" class="nav-link">Home</a>
+    <a href="players.html" class="nav-link">Player DB</a>
+    <a href="#" class="nav-link">Team Hub</a>
+    <a href="rankings.html" class="nav-link">IDP Rankings</a>
+  </div>
+</nav>
+
+<div class="page-hdr">
+  <div class="page-title">SPIELER <span>VERGLEICH</span></div>
+  <a class="back-link" href="players.html">← Zurück zur Player DB</a>
+</div>
+
+<div id="content"><div class="empty-state"><h3>Lade…</h3></div></div>
+
+<script type="module">
+// ── SLEEPER PLAYER CACHE (identisch zu rankings.html) ──────────────────────
+const SLEEPER_ALL = 'https://api.sleeper.app/v1/players/nfl';
+const CACHE_KEY = 'mim_sleeper_players_v3', CACHE_TS = 'mim_sleeper_ts_v3', CACHE_TTL = 23*60*60*1000;
+function store(){ try{localStorage.setItem('_t','1');localStorage.removeItem('_t');return localStorage;}catch{return sessionStorage;} }
+const DL_SET=new Set(['DE','DT','NT','EDGE','IDL','DL']), LB_SET=new Set(['LB','ILB','MLB','OLB']), DB_SET=new Set(['CB','FS','SS','S','DB','SAF']);
+function classifyTag(tag){
+  const t=(tag||'').toUpperCase();
+  if(DL_SET.has(t)) return 'DL';
+  if(LB_SET.has(t)) return 'LB';
+  if(DB_SET.has(t)) return 'DB';
+  return null;
+}
+function classifyPlayer(x){
+  const groups = new Set();
+  const tags = (x.fantasy_positions && x.fantasy_positions.length) ? x.fantasy_positions : [x.position];
+  tags.forEach(t => { const c = classifyTag(t); if(c) groups.add(c); });
+  if(groups.size === 0){ const c2 = classifyTag(x.depth_chart_position); if(c2) groups.add(c2); }
+  return [...groups];
+}
+let playerMap = {};
+async function loadAllPlayers(){
+  const cached = (()=>{ try{ const s=store(), ts=s.getItem(CACHE_TS); if(ts && Date.now()-parseInt(ts)<CACHE_TTL){ const r=s.getItem(CACHE_KEY); return r?JSON.parse(r):null; } }catch{} return null; })();
+  let allPlayers;
+  if(cached){ allPlayers = cached; }
+  else {
+    const r = await fetch(SLEEPER_ALL); const data = await r.json();
+    const nowYear = new Date().getFullYear();
+    allPlayers = Object.entries(data).map(([id,x]) => {
+      const groups = classifyPlayer(x);
+      if(!groups.length) return null;
+      return {
+        sleeper_id:id,
+        full_name:x.full_name||`${x.first_name||''} ${x.last_name||''}`.trim(),
+        position:groups[0], positions:groups, team:x.team||'',
+        years_exp: x.years_exp != null ? x.years_exp : null,
+        entry_year: x.years_exp != null ? (nowYear - x.years_exp) : null
+      };
+    }).filter(Boolean);
+    try{ const s=store(); s.setItem(CACHE_KEY, JSON.stringify(allPlayers)); s.setItem(CACHE_TS, Date.now().toString()); }catch{}
+  }
+  playerMap = {};
+  allPlayers.forEach(p => playerMap[p.sleeper_id] = p);
+}
+
+// ── LIGA SCORING (identisch zu rankings.html / player.html) ────────────────
+const LIGA_SCORING = {idp_tkl_solo:1.5, idp_tkl_ast:0.5, idp_sack:4, idp_qb_hit:1,
+  idp_tkl_loss:2, idp_pass_def:3, idp_int:6, idp_fum_rec:2, idp_ff:4, idp_td:6,
+  idp_safe:10, idp_blk_kick:6};
+function getStat(s, ...keys){ if(!s) return null; for(const k of keys){ if(s[k]!==undefined && s[k]!==null) return parseFloat(s[k]); } return null; }
+function calcPts(s){
+  if(!s) return 0;
+  let pts = 0;
+  for(const [k,v] of Object.entries(LIGA_SCORING)){ const val = getStat(s,k); if(val && val>0) pts += val*v; }
+  return Math.round(pts*100)/100;
+}
+const NOW_YEAR = new Date().getFullYear();
+const SL_SEASON_DIRECT = (id,yr) => `https://api.sleeper.com/stats/nfl/player/${id}?season_type=regular&season=${yr}&grouping=season`;
+const SL_SEASON_PROXY  = (id,yr) => `https://corsproxy.io/?url=${encodeURIComponent(SL_SEASON_DIRECT(id,yr))}`;
+async function fetchSeasonStats(id, yr){
+  for(const url of [SL_SEASON_DIRECT(id,yr), SL_SEASON_PROXY(id,yr)]){
+    try{
+      const r = await fetch(url);
+      if(!r.ok) continue;
+      const t = await r.text();
+      if(!t || t === 'null') return null;
+      const obj = JSON.parse(t);
+      if(!obj || typeof obj !== 'object') continue;
+      return obj.stats ? obj.stats : obj;
+    }catch(e){}
+  }
+  return null;
+}
+async function loadPlayerSeasons(id){
+  const years = [NOW_YEAR, NOW_YEAR-1, NOW_YEAR-2];
+  const pts = {};
+  let lastSeasonStats = null;
+  for(const yr of years){
+    const s = await fetchSeasonStats(id, yr);
+    pts[yr] = s ? calcPts(s) : 0;
+    if(yr === NOW_YEAR-1) lastSeasonStats = s;
+  }
+  return { pts, lastSeasonStats };
+}
+
+const STAT_DEFS = [['Tackles','idp_tkl'],['Solo','idp_tkl_solo'],['Assist','idp_tkl_ast'],['TFL','idp_tkl_loss'],
+  ['Sacks','idp_sack'],['QB Hits','idp_qb_hit'],['PBU','idp_pass_def'],['INT','idp_int'],
+  ['Fum. Rec.','idp_fum_rec'],['Forced F.','idp_ff'],['Safeties','idp_safe'],['TDs','idp_td']];
+
+function headshotHtml(p, id){
+  const url = `https://sleepercdn.com/content/nfl/players/${id}.jpg`;
+  const initials = (p.full_name||'??').split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
+  return `<img class="cmp-hs" src="${url}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+          <div class="cmp-hs-fb" style="display:none">${initials}</div>`;
+}
+
+function cardHtml(id, p){
+  return `<div class="cmp-card" id="card-${id}">
+    <div class="cmp-hdr">
+      ${headshotHtml(p, id)}
+      <div>
+        <div class="cmp-name">${p.full_name}</div>
+        <div class="cmp-sub">${(p.positions||[p.position]).join('/')} · ${p.team||'FA'}</div>
+      </div>
+    </div>
+    <div class="cmp-loading">Lade Statistiken…</div>
+  </div>`;
+}
+
+function fillCard(id, data){
+  const card = document.getElementById(`card-${id}`);
+  if(!card) return;
+  const years = [NOW_YEAR, NOW_YEAR-1, NOW_YEAR-2];
+  const ptsHtml = `<div class="cmp-pts-row">${years.map(y => `
+    <div class="cmp-pts-cell">
+      <div class="cmp-pts-year">${y}</div>
+      <div class="cmp-pts-val">${(data.pts && data.pts[y] != null) ? data.pts[y].toFixed(1) : '0.0'}</div>
+    </div>`).join('')}</div>`;
+  const s = data.lastSeasonStats;
+  const statsHtml = `<div class="cmp-stats-title">${NOW_YEAR-1} Stats</div>
+    <div class="cmp-stats-grid">${STAT_DEFS.map(([label,key]) => `
+      <div class="cmp-stat"><span class="cmp-stat-label">${label}</span><span class="cmp-stat-val">${getStat(s,key) || 0}</span></div>`).join('')}
+    </div>`;
+  const loadingEl = card.querySelector('.cmp-loading');
+  if(loadingEl) loadingEl.outerHTML = ptsHtml + statsHtml + `<a class="cmp-profile-link" href="player.html?id=${id}" target="_blank" rel="noopener">Zum Spielerprofil →</a>`;
+}
+
+async function init(){
+  const params = new URLSearchParams(location.search);
+  const ids = (params.get('ids') || '').split(',').map(s => s.trim()).filter(Boolean).slice(0, 3);
+  const content = document.getElementById('content');
+
+  if(!ids.length){
+    content.innerHTML = `<div class="empty-state"><h3>Keine Spieler ausgewählt</h3><p>Wähle in der Player DB bis zu 3 Spieler zum Vergleich aus.</p></div>`;
+    return;
+  }
+
+  await loadAllPlayers();
+  const validIds = ids.filter(id => playerMap[id]);
+  if(!validIds.length){
+    content.innerHTML = `<div class="empty-state"><h3>Spieler nicht gefunden</h3><p>Die übergebenen Spieler-IDs konnten nicht aufgelöst werden.</p></div>`;
+    return;
+  }
+
+  content.innerHTML = `<div class="compare-grid">${validIds.map(id => cardHtml(id, playerMap[id])).join('')}</div>`;
+
+  validIds.forEach(async id => {
+    const data = await loadPlayerSeasons(id);
+    fillCard(id, data);
+  });
+}
+
+init();
+</script>
+
+</body>
+</html>

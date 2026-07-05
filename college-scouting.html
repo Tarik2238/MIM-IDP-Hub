@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>College Scouting · Mics in Motion</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+:root{
+  --bg:#080c10;--bg2:#0d1117;--bg3:#161b22;--bg4:#1c2128;
+  --border:#21262d;--border2:#30363d;
+  --text:#e6edf3;--muted:#7d8590;--muted2:#9198a1;
+  --orange:#C4722A;--orange-dim:#7a4419;--orange-glow:rgba(196,114,42,.15);
+  --green:#238636;--green-light:#2ea043;--red:#da3633;--gold:#e3b341;
+  --radius:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;}
+
+/* NAV (identisch zu rankings.html) */
+nav{background:rgba(13,17,23,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 32px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.brand{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;color:#fff;text-decoration:none;}
+.brand em{color:var(--orange);font-style:normal;}
+.nav-mid{display:flex;gap:4px;}
+.nav-link{font-size:13px;font-weight:500;color:var(--muted);text-decoration:none;padding:6px 12px;border-radius:6px;transition:all .15s;}
+.nav-link:hover{color:var(--text);background:var(--bg3);}
+.nav-link.active{color:var(--orange);background:var(--orange-glow);}
+.auth-wrap{display:flex;align-items:center;gap:10px;}
+.auth-btn{font-size:12px;font-weight:600;letter-spacing:.5px;color:var(--text);background:var(--bg3);border:1px solid var(--border);padding:7px 16px;border-radius:6px;cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif;}
+.auth-btn:hover{border-color:var(--orange);}
+.auth-user{display:flex;align-items:center;gap:10px;}
+.auth-avatar{width:30px;height:30px;border-radius:50%;background:var(--orange);color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:14px;}
+.auth-name{font-size:13px;font-weight:500;color:var(--text);}
+.auth-logout{font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;font-family:'Inter',sans-serif;}
+.auth-logout:hover{color:var(--text);}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;z-index:500;backdrop-filter:blur(3px);}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:32px;width:100%;max-width:360px;position:relative;}
+.modal-close{position:absolute;top:14px;right:16px;background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;line-height:1;}
+.modal-close:hover{color:var(--text);}
+.modal-title{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:2px;color:#fff;margin-bottom:4px;}
+.modal-field{margin-bottom:14px;}
+.modal-field label{display:block;font-size:11px;color:var(--muted);margin-bottom:6px;letter-spacing:.5px;}
+.modal-field input{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:10px 12px;color:var(--text);font-size:13px;font-family:'Inter',sans-serif;outline:none;}
+.modal-field input:focus{border-color:var(--orange);}
+.modal-submit{width:100%;background:var(--orange);color:#fff;border:none;padding:11px;border-radius:6px;font-weight:600;font-size:13px;cursor:pointer;margin-top:6px;font-family:'Inter',sans-serif;}
+.modal-submit:hover{opacity:.9;}
+.modal-error{color:var(--red);font-size:12px;margin-top:10px;display:none;}
+.modal-error.show{display:block;}
+
+/* GATE SCREENS (kein App-Login / kein Google-Login) */
+.gate-wrap{max-width:520px;margin:80px auto;padding:0 24px;text-align:center;}
+.gate-icon{font-size:40px;margin-bottom:18px;}
+.gate-title{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:2px;color:#fff;margin-bottom:12px;}
+.gate-text{font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:24px;}
+.gate-btn{background:var(--orange);color:#fff;border:none;padding:13px 28px;border-radius:8px;font-weight:600;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif;}
+.gate-btn:hover{opacity:.9;}
+.gate-note{margin-top:20px;font-size:11px;color:var(--muted2);background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px 16px;text-align:left;line-height:1.6;}
+.gate-note b{color:var(--muted2);}
+
+/* TOOLBAR */
+.toolbar{padding:20px 32px;border-bottom:1px solid var(--border);background:var(--bg2);display:flex;align-items:flex-start;gap:32px;flex-wrap:wrap;}
+.tb-title{font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:2px;color:#fff;}
+.tb-title span{color:var(--orange);}
+.tb-group{display:flex;flex-direction:column;gap:6px;}
+.tb-group label{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);}
+.tb-select{background:var(--bg3);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:'Inter',sans-serif;font-size:13px;padding:9px 12px;min-width:100px;outline:none;}
+.tb-select:focus{border-color:var(--orange);}
+.pos-tabs{display:flex;gap:4px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:3px;flex-wrap:wrap;max-width:520px;}
+.pos-tab{background:none;border:none;color:var(--muted);font-family:'Inter',sans-serif;font-size:12px;font-weight:700;letter-spacing:.5px;padding:7px 14px;border-radius:6px;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.pos-tab:hover{color:var(--text);}
+.pos-tab.active{background:var(--orange);color:#fff;}
+
+/* GRID */
+.grid-wrap{padding:28px 32px 60px;}
+.player-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:22px;max-width:1800px;margin:0 auto;}
+@media(max-width:1300px){ .player-grid{grid-template-columns:repeat(3,1fr);} }
+@media(max-width:900px){ .player-grid{grid-template-columns:repeat(2,1fr);} }
+@media(max-width:600px){ .player-grid{grid-template-columns:1fr;} }
+.empty-state{padding:60px 32px;text-align:center;color:var(--muted);grid-column:1/-1;}
+.empty-state h3{font-family:'Bebas Neue',sans-serif;font-size:22px;color:#fff;letter-spacing:1px;margin-bottom:8px;}
+
+.p-card{position:relative;border-radius:var(--radius);overflow:hidden;border:1px solid var(--border);background:var(--bg3);min-height:250px;}
+.p-card-logo-bg{position:absolute;inset:0;background-size:contain;background-position:right -30px bottom -30px;background-repeat:no-repeat;opacity:.16;filter:saturate(1.3);pointer-events:none;}
+.p-card-inner{position:relative;z-index:1;padding:22px;display:flex;flex-direction:column;height:100%;}
+.p-card-top{display:flex;gap:16px;align-items:flex-start;}
+.p-link{display:flex;gap:16px;align-items:flex-start;text-decoration:none;color:inherit;flex:1;min-width:0;}
+.p-hs,.p-hs-fb{width:84px;height:84px;border-radius:10px;object-fit:cover;object-position:top;background:var(--bg2);border:1px solid var(--border2);flex-shrink:0;}
+.p-hs-fb{display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--muted);}
+.p-info{min-width:0;}
+.p-name{font-weight:700;font-size:19px;color:#fff;line-height:1.25;}
+.p-sub{font-size:13px;color:var(--muted2);margin-top:5px;line-height:1.5;}
+.p-star{background:none;border:none;font-size:28px;cursor:pointer;line-height:1;color:var(--border2);flex-shrink:0;padding:2px;transition:transform .1s;}
+.p-star:hover{transform:scale(1.15);}
+.p-star.on{color:var(--gold);}
+.p-watch-row{margin-top:auto;padding-top:20px;display:flex;gap:18px;flex-wrap:wrap;}
+.p-watch-item{display:flex;align-items:center;gap:10px;}
+.p-watch-avatar,.p-watch-avatar-fb{width:52px;height:52px;border-radius:10px;object-fit:cover;display:block;opacity:.5;}
+.p-watch-avatar-fb{background:var(--orange);color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:19px;}
+.p-watch-item.checked .p-watch-avatar,.p-watch-item.checked .p-watch-avatar-fb{opacity:1;}
+.p-watch-check{width:28px;height:28px;accent-color:var(--green-light);cursor:pointer;}
+.p-watch-check:disabled{cursor:not-allowed;opacity:.35;}
+.p-no-link{font-size:11px;color:var(--muted);font-style:italic;margin-top:6px;}
+
+@media(max-width:700px){
+  nav{padding:0 20px;} .toolbar,.grid-wrap{padding-left:20px;padding-right:20px;}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="brand">MICS IN <em>MOTION</em></a>
+  <div class="nav-mid">
+    <a href="index.html" class="nav-link">Home</a>
+    <a href="players.html" class="nav-link">Player DB</a>
+    <a href="#" class="nav-link">Team Hub</a>
+    <a href="rankings.html" class="nav-link">IDP Rankings</a>
+    <a href="college-scouting.html" class="nav-link active" id="nav-scouting-link" style="display:none;">College Scouting</a>
+  </div>
+  <div class="auth-wrap" id="auth-wrap">
+    <button class="auth-btn" id="auth-open-btn">Login</button>
+  </div>
+</nav>
+
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <button class="modal-close" id="modal-close-btn">&times;</button>
+    <div class="modal-title">Login</div>
+    <div class="modal-field" style="margin-top:16px;"><label>Benutzername</label><input type="text" id="login-email" autocapitalize="off"></div>
+    <div class="modal-field"><label>Passwort</label><input type="password" id="login-pw"></div>
+    <button class="modal-submit" id="login-submit">Anmelden</button>
+    <div class="modal-error" id="modal-error"></div>
+  </div>
+</div>
+
+<!-- Gate 1: kein App-Login -->
+<div class="gate-wrap" id="gate-app-login">
+  <div class="gate-icon">🔒</div>
+  <div class="gate-title">Nur für Mitglieder</div>
+  <div class="gate-text">College Scouting ist nur für angemeldete MIM-Mitglieder sichtbar. Bitte melde dich zuerst über den Login-Button oben rechts an.</div>
+</div>
+
+<!-- Gate 2: App-Login ok, aber noch nicht mit Google verbunden -->
+<div class="gate-wrap" id="gate-google-login" style="display:none;">
+  <div class="gate-icon">📊</div>
+  <div class="gate-title">Mit Google verbinden</div>
+  <div class="gate-text">Die Scouting-Datenbank liegt in einem Google Sheet, das nur für unseren gemeinsamen Drive-Account freigegeben ist. Melde dich einmal mit diesem Account an, damit die Seite die Tabelle live auslesen kann.</div>
+  <button class="gate-btn" id="google-signin-btn">Mit Google anmelden</button>
+  <div class="gate-note">
+    <b>Wie das funktioniert:</b> Google zeigt gleich einen normalen Anmelde-Dialog. Bist du in diesem Browser bereits beim gemeinsamen Drive-Account eingeloggt, reicht eine kurze Bestätigung — <b>keine erneute 2FA-Abfrage nötig</b>. Nur bei einem komplett neuen Gerät/Browser wird einmalig die volle Anmeldung inkl. 2FA fällig. Meldet euch dazu vorher einmal ganz normal bei drive.google.com mit dem gemeinsamen Account an.
+  </div>
+</div>
+
+<!-- Hauptinhalt -->
+<div id="scouting-app" style="display:none;">
+  <div class="toolbar">
+    <div class="tb-title">COLLEGE <span>SCOUTING</span></div>
+    <div class="tb-group">
+      <label>Jahrgang</label>
+      <select class="tb-select" id="year-select"></select>
+    </div>
+    <div class="tb-group">
+      <label>Position</label>
+      <div class="pos-tabs" id="pos-tabs"></div>
+    </div>
+  </div>
+  <div class="grid-wrap">
+    <div class="player-grid" id="player-grid">
+      <div class="empty-state"><h3>Lade Tabellenblätter…</h3></div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { watchAuth, loginUser, logoutUser, listAllRankings, avatarFor, loadScoutingDoc, watchScoutingDoc, toggleScoutingStar, toggleScoutingWatched } from './firebase-init.js';
+
+// ─── KONFIGURATION ──────────────────────────────────────────────────────────
+// 1) Google Cloud Projekt anlegen (console.cloud.google.com) — kann dasselbe
+//    oder ein separates Projekt vom Firebase-Projekt sein.
+// 2) APIs & Dienste → Bibliothek → "Google Sheets API" suchen → Aktivieren
+// 3) APIs & Dienste → OAuth-Zustimmungsbildschirm → Extern → App-Namen vergeben
+//    → unter "Testnutzer" die Google-Adresse(n) eures gemeinsamen Drive-Accounts
+//    (und ggf. eure eigenen) eintragen, solange die App nicht verifiziert ist
+// 4) APIs & Dienste → Zugangsdaten → "Anmeldedaten erstellen" → OAuth-Client-ID
+//    → Typ "Webanwendung" → bei "Autorisierte JavaScript-Quellen" eure Domain
+//    eintragen (z.B. https://tarik2238.github.io)
+// 5) Die erzeugte Client-ID unten einfügen
+const GOOGLE_CLIENT_ID = '1057503302309-3a2e5r43f0i7r52rssrb2tf50v779nul.apps.googleusercontent.com';
+const SPREADSHEET_ID = '17TOUdKg5RsHNlz2GdCNNd7dL2ZIMe-IhEkvjnF1kSnI';
+
+// ─── APP-LOGIN (Firebase, wie auf den anderen Seiten) ──────────────────────
+const authWrap = document.getElementById('auth-wrap');
+const overlay = document.getElementById('modal-overlay');
+const errEl = document.getElementById('modal-error');
+document.getElementById('auth-open-btn').addEventListener('click', () => overlay.classList.add('open'));
+document.getElementById('modal-close-btn').addEventListener('click', () => overlay.classList.remove('open'));
+overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('open'); });
+function showErr(msg){ errEl.textContent = msg; errEl.classList.add('show'); }
+function mapAuthError(e){
+  const c = e.code || '';
+  if(c.includes('invalid-credential')||c.includes('wrong-password')||c.includes('user-not-found')) return 'Benutzername oder Passwort falsch.';
+  return 'Fehler: ' + (e.message || 'unbekannt');
+}
+document.getElementById('login-submit').addEventListener('click', async () => {
+  errEl.classList.remove('show');
+  try{ await loginUser(document.getElementById('login-email').value, document.getElementById('login-pw').value); overlay.classList.remove('open'); }
+  catch(e){ showErr(mapAuthError(e)); }
+});
+
+let currentUser = null;
+watchAuth(user => {
+  currentUser = user;
+  if(user){
+    const initial = (user.displayName || user.email || '?')[0].toUpperCase();
+    authWrap.innerHTML = `<div class="auth-user"><div class="auth-avatar">${initial}</div><div><div class="auth-name">${user.displayName||user.email}</div><button class="auth-logout" id="logout-btn">Logout</button></div></div>`;
+    document.getElementById('logout-btn').addEventListener('click', () => logoutUser());
+    document.getElementById('gate-app-login').style.display = 'none';
+    document.getElementById('gate-google-login').style.display = googleAccessToken ? 'none' : 'block';
+    document.getElementById('scouting-app').style.display = googleAccessToken ? 'block' : 'none';
+  } else {
+    authWrap.innerHTML = `<button class="auth-btn" id="auth-open-btn">Login</button>`;
+    document.getElementById('auth-open-btn').addEventListener('click', () => overlay.classList.add('open'));
+    document.getElementById('gate-app-login').style.display = 'block';
+    document.getElementById('gate-google-login').style.display = 'none';
+    document.getElementById('scouting-app').style.display = 'none';
+  }
+});
+
+// ─── GOOGLE OAUTH (Sheets API, unabhängig vom App-Login) ───────────────────
+let googleAccessToken = null;
+let tokenClient = null;
+
+function initGoogleAuth(){
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: GOOGLE_CLIENT_ID,
+    scope: 'https://www.googleapis.com/auth/spreadsheets.readonly',
+    callback: (resp) => {
+      if(resp.error){ alert('Google-Anmeldung fehlgeschlagen: ' + resp.error); return; }
+      googleAccessToken = resp.access_token;
+      document.getElementById('gate-google-login').style.display = 'none';
+      document.getElementById('scouting-app').style.display = 'block';
+      initScoutingApp();
+    }
+  });
+}
+document.getElementById('google-signin-btn').addEventListener('click', () => {
+  if(tokenClient) tokenClient.requestAccessToken({ prompt: '' });
+});
+window.addEventListener('load', () => { if(window.google) initGoogleAuth(); });
+
+async function sheetsApiFetch(url){
+  const r = await fetch(url, { headers: { Authorization: `Bearer ${googleAccessToken}` } });
+  if(!r.ok) throw new Error('Sheets API Fehler ' + r.status);
+  return r.json();
+}
+
+// ─── SHEET-TABS ERMITTELN (dynamisch, kein hartcodiertes Namensschema) ─────
+// Erkennt sowohl "2026+ DL" (laufender Jahrgang) als auch "2025 DL" (archiviert)
+let allTabs = []; // [{title, year, pos}]
+async function loadSheetTabs(){
+  const data = await sheetsApiFetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}?fields=sheets.properties`);
+  const titles = (data.sheets || []).map(s => s.properties.title);
+  allTabs = titles.map(title => {
+    const m = title.match(/^(\d{4})\+?\s+(.+)$/);
+    if(!m) return null;
+    return { title, year: parseInt(m[1], 10), pos: m[2].trim().toUpperCase() };
+  }).filter(Boolean);
+}
+
+async function loadPlayersForTab(title){
+  const range = `${title}!A2:B500`;
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}?ranges=${encodeURIComponent(range)}&fields=sheets.data.rowData.values(formattedValue,hyperlink)&includeGridData=true`;
+  const data = await sheetsApiFetch(url);
+  const rows = data.sheets?.[0]?.data?.[0]?.rowData || [];
+  const players = [];
+  rows.forEach(row => {
+    const cells = row.values || [];
+    const name = cells[0]?.formattedValue;
+    if(!name) return;
+    players.push({ name, school: cells[1]?.formattedValue || '', driveUrl: cells[0]?.hyperlink || null });
+  });
+  return players;
+}
+
+// ─── ESPN: TEAM-LOGOS + HEADSHOT-ABGLEICH (best effort, mit Fallback) ──────
+// Direkt-Fetch zuerst, bei CORS-/Netzwerkfehler über allorigins.win, zuletzt corsproxy.io
+// (identische Proxy-Reihenfolge wie beim nflverse-Import an anderer Stelle im Projekt —
+// corsproxy.io allein hat sich dort schon als unzuverlässig erwiesen, 403/522).
+async function fetchEspnFB(url){
+  const attempts = [
+    url,
+    `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+    `https://corsproxy.io/?url=${encodeURIComponent(url)}`
+  ];
+  for(const u of attempts){
+    try{
+      const r = await fetch(u);
+      if(!r.ok) continue;
+      return await r.json();
+    }catch(e){}
+  }
+  return null;
+}
+
+let espnTeams = null;
+async function loadEspnTeams(){
+  const cacheKey = 'mim_espn_cfb_teams_v2', tsKey = 'mim_espn_cfb_teams_ts_v2', ttl = 24*60*60*1000;
+  try{
+    const ts = localStorage.getItem(tsKey);
+    if(ts && Date.now()-parseInt(ts) < ttl){
+      const cached = localStorage.getItem(cacheKey);
+      if(cached){ espnTeams = JSON.parse(cached); return; }
+    }
+  }catch{}
+  const data = await fetchEspnFB('https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams?limit=400');
+  const list = data?.sports?.[0]?.leagues?.[0]?.teams || [];
+  espnTeams = list.map(t => ({
+    name: t.team.displayName || '', location: t.team.location || '', shortName: t.team.shortDisplayName || '',
+    id: t.team.id, logo: t.team.logos?.[0]?.href || ''
+  }));
+  if(espnTeams.length){
+    try{ localStorage.setItem(cacheKey, JSON.stringify(espnTeams)); localStorage.setItem(tsKey, Date.now().toString()); }catch{}
+  } else {
+    console.warn('ESPN Team-Liste konnte nicht geladen werden (Logos/Headshots fallen auf Platzhalter zurück)');
+  }
+}
+function normTxt(s){ return (s||'').toLowerCase().replace(/[^a-z]/g,''); }
+function findEspnTeam(school){
+  if(!espnTeams || !school) return null;
+  const norm = normTxt(school);
+  return espnTeams.find(t => normTxt(t.location) === norm || normTxt(t.name) === norm || normTxt(t.shortName) === norm)
+    || espnTeams.find(t => norm && (normTxt(t.name).includes(norm) || norm.includes(normTxt(t.location))))
+    || null;
+}
+const rosterCache = {};
+async function getTeamRoster(teamId){
+  if(rosterCache[teamId]) return rosterCache[teamId];
+  // Zwei mögliche ESPN-Formate abklappern: dediziertes /roster (nach Positionsgruppen)
+  // und der ?enable=roster-Embed auf dem Team-Endpoint (flache athletes[]-Liste).
+  let athletes = [];
+  const d1 = await fetchEspnFB(`https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/${teamId}/roster`);
+  if(d1?.athletes?.length){
+    d1.athletes.forEach(group => {
+      if(Array.isArray(group.items)) group.items.forEach(a => athletes.push(a));
+      else if(group.displayName || group.fullName) athletes.push(group); // schon ein flaches Athlet-Objekt
+    });
+  }
+  if(!athletes.length){
+    const d2 = await fetchEspnFB(`https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/${teamId}?enable=roster`);
+    const flat = d2?.team?.athletes;
+    if(Array.isArray(flat)) athletes = flat;
+  }
+  rosterCache[teamId] = athletes;
+  return athletes;
+}
+function findAthlete(roster, fullName){
+  const norm = normTxt(fullName);
+  return roster.find(a => normTxt(a.displayName) === norm || normTxt(a.fullName) === norm) || null;
+}
+// ESPN liefert bei manchen Athleten ein experience-Feld mit Klassenjahr (Junior/Senior/…)
+function athleteClassYear(athlete){
+  return athlete?.experience?.displayValue || athlete?.experience?.abbreviation || null;
+}
+
+// ─── SLUG (für Firestore-Doc-Keys) ─────────────────────────────────────────
+function slugify(name){ return (name||'').toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'') || 'unknown'; }
+
+// ─── STATE ──────────────────────────────────────────────────────────────
+let allUsers = [];
+let currentYear = null;
+let currentPos = null;
+let unsubScouting = null;
+let scoutingDocData = { players: {} };
+
+async function initScoutingApp(){
+  document.getElementById('player-grid').innerHTML = `<div class="empty-state"><h3>Lade Tabellenblätter…</h3></div>`;
+  await Promise.all([loadSheetTabs(), loadEspnTeams(), (async()=>{ allUsers = await listAllRankings(); allUsers.sort((a,b)=>(a.displayName||'').localeCompare(b.displayName||'','de',{sensitivity:'base'})); })()]);
+
+  const years = [...new Set(allTabs.map(t => t.year))].sort((a,b) => b - a);
+  if(!years.length){
+    document.getElementById('player-grid').innerHTML = `<div class="empty-state"><h3>Keine passenden Tabs gefunden</h3><p>Erwartet wird ein Muster wie "2026+ DL" oder "2025 DL".</p></div>`;
+    return;
+  }
+  const yearSelect = document.getElementById('year-select');
+  yearSelect.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
+  currentYear = years[0];
+  yearSelect.value = currentYear;
+  yearSelect.addEventListener('change', () => { currentYear = parseInt(yearSelect.value,10); renderPosTabs(); });
+
+  renderPosTabs();
+}
+
+function renderPosTabs(){
+  const positions = allTabs.filter(t => t.year === currentYear).map(t => t.pos);
+  const posTabsEl = document.getElementById('pos-tabs');
+  posTabsEl.innerHTML = positions.map((pos,i) => `<button class="pos-tab${i===0?' active':''}" data-pos="${pos}">${pos}</button>`).join('');
+  posTabsEl.querySelectorAll('.pos-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      posTabsEl.querySelectorAll('.pos-tab').forEach(b => b.classList.toggle('active', b===btn));
+      currentPos = btn.dataset.pos;
+      loadAndRenderPosition();
+    });
+  });
+  currentPos = positions[0] || null;
+  if(currentPos) loadAndRenderPosition();
+}
+
+async function loadAndRenderPosition(){
+  const grid = document.getElementById('player-grid');
+  grid.innerHTML = `<div class="empty-state"><h3>Lade Spieler…</h3></div>`;
+
+  const tab = allTabs.find(t => t.year === currentYear && t.pos === currentPos);
+  if(!tab){ grid.innerHTML = `<div class="empty-state"><h3>Kein Tab gefunden</h3></div>`; return; }
+
+  const players = await loadPlayersForTab(tab.title);
+
+  if(unsubScouting) unsubScouting();
+  unsubScouting = watchScoutingDoc(currentYear, currentPos, data => {
+    scoutingDocData = data || { players: {} };
+    renderGrid(players);
+  });
+}
+
+function watchAvatarHtml(user){
+  const img = avatarFor(user.displayName);
+  const initial = (user.displayName||'?')[0].toUpperCase();
+  return img ? `<img class="p-watch-avatar" src="${img}" alt="${user.displayName||''}">` : `<div class="p-watch-avatar-fb">${initial}</div>`;
+}
+
+function renderGrid(players){
+  const grid = document.getElementById('player-grid');
+  if(!players.length){
+    grid.innerHTML = `<div class="empty-state"><h3>Keine Spieler in diesem Tab</h3></div>`;
+    return;
+  }
+  grid.innerHTML = players.map(p => {
+    const slug = slugify(p.name);
+    const status = (scoutingDocData.players && scoutingDocData.players[slug]) || {};
+    const starred = !!status.starred;
+    const team = findEspnTeam(p.school);
+    const logoBg = team?.logo ? `style="background-image:url('${team.logo}')"` : '';
+    const initials = p.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+
+    const watchHtml = allUsers.map(u => {
+      const checked = !!(status.watchedBy && status.watchedBy[u.id]);
+      const isMe = currentUser && currentUser.uid === u.id;
+      return `<div class="p-watch-item${checked?' checked':''}" title="${u.displayName||''}${checked?' – geschaut':''}">
+        ${watchAvatarHtml(u)}
+        <input type="checkbox" class="p-watch-check" data-uid="${u.id}" data-slug="${slug}" ${checked?'checked':''} ${isMe?'':'disabled'}>
+      </div>`;
+    }).join('');
+
+    return `<div class="p-card">
+      <div class="p-card-logo-bg" ${logoBg}></div>
+      <div class="p-card-inner">
+        <div class="p-card-top">
+          ${p.driveUrl
+            ? `<a class="p-link" href="${p.driveUrl}" target="_blank" rel="noopener">${headshotBlock(p, team, initials, slug)}</a>`
+            : `<div class="p-link">${headshotBlock(p, team, initials, slug)}</div>`}
+          <button class="p-star${starred?' on':''}" data-slug="${slug}" title="Muss-Sehen-Markierung">★</button>
+        </div>
+        ${!p.driveUrl ? `<div class="p-no-link">Kein Tape-Link hinterlegt</div>` : ''}
+        <div class="p-watch-row">${watchHtml}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  grid.querySelectorAll('.p-star').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const slug = btn.dataset.slug;
+      const current = !!(scoutingDocData.players?.[slug]?.starred);
+      btn.classList.toggle('on', !current);
+      await toggleScoutingStar(currentYear, currentPos, slug, !current);
+    });
+  });
+  grid.querySelectorAll('.p-watch-check').forEach(cb => {
+    cb.addEventListener('change', async () => {
+      if(!currentUser || cb.dataset.uid !== currentUser.uid) return;
+      await toggleScoutingWatched(currentYear, currentPos, cb.dataset.slug, currentUser.uid, cb.checked);
+    });
+  });
+}
+
+function headshotBlock(p, team, initials, slug){
+  if(team){
+    getTeamRoster(team.id).then(roster => {
+      const athlete = findAthlete(roster, p.name);
+      if(athlete?.headshot?.href){
+        const img = document.querySelector(`img[data-slug="${slug}"]`);
+        if(img){ img.src = athlete.headshot.href; }
+      }
+      const classYear = athleteClassYear(athlete);
+      if(classYear){
+        const yearEl = document.querySelector(`span[data-year-slug="${slug}"]`);
+        if(yearEl) yearEl.textContent = ` · ${classYear}`;
+      }
+    }).catch(()=>{});
+  }
+  return `<img class="p-hs" data-slug="${slug}" src="" alt="" style="display:none" onload="this.style.display='block';this.nextElementSibling.style.display='none'" onerror="this.style.display='none'">
+    <div class="p-hs-fb">${initials}</div>
+    <div class="p-info">
+      <div class="p-name">${p.name}</div>
+      <div class="p-sub">${p.school||'–'}<span data-year-slug="${slug}"></span></div>
+    </div>`;
+}
+</script>
+
+</body>
+</html>

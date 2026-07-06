@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Team · Mics in Motion</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#080c10;--bg2:#0d1117;--bg3:#161b22;--bg4:#1c2128;
+  --border:#21262d;--border2:#30363d;
+  --text:#e6edf3;--muted:#7d8590;--muted2:#9198a1;
+  --orange:#C4722A;--orange-dim:#7a4419;--orange-glow:rgba(196,114,42,.15);
+  --red:#da3633;--radius:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;}
+
+nav{background:rgba(13,17,23,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 32px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.brand{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;color:#fff;text-decoration:none;display:flex;align-items:center;gap:10px;}
+.brand-logo{width:32px;height:32px;display:block;}
+.brand em{color:var(--orange);font-style:normal;}
+.nav-mid{display:flex;gap:4px;}
+.nav-link{font-size:13px;font-weight:500;color:var(--muted);text-decoration:none;padding:6px 12px;border-radius:6px;transition:all .15s;}
+.nav-link:hover{color:var(--text);background:var(--bg3);}
+.nav-link.active{color:var(--orange);background:var(--orange-glow);}
+.auth-wrap{display:flex;align-items:center;gap:10px;}
+.auth-btn{font-size:12px;font-weight:600;letter-spacing:.5px;color:var(--text);background:var(--bg3);border:1px solid var(--border);padding:7px 16px;border-radius:6px;cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif;}
+.auth-btn:hover{border-color:var(--orange);}
+.auth-user{display:flex;align-items:center;gap:10px;}
+.auth-avatar{width:30px;height:30px;border-radius:50%;background:var(--orange);color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:14px;}
+.auth-name{font-size:13px;font-weight:500;color:var(--text);}
+.auth-logout{font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;font-family:'Inter',sans-serif;}
+.auth-logout:hover{color:var(--text);}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;z-index:500;backdrop-filter:blur(3px);}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:32px;width:100%;max-width:360px;position:relative;}
+.modal-close{position:absolute;top:14px;right:16px;background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;line-height:1;}
+.modal-close:hover{color:var(--text);}
+.modal-title{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:2px;color:#fff;margin-bottom:4px;}
+.modal-field{margin-bottom:14px;}
+.modal-field label{display:block;font-size:11px;color:var(--muted);margin-bottom:6px;letter-spacing:.5px;}
+.modal-field input{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:10px 12px;color:var(--text);font-size:13px;font-family:'Inter',sans-serif;outline:none;}
+.modal-field input:focus{border-color:var(--orange);}
+.modal-submit{width:100%;background:var(--orange);color:#fff;border:none;padding:11px;border-radius:6px;font-weight:600;font-size:13px;cursor:pointer;margin-top:6px;font-family:'Inter',sans-serif;}
+.modal-submit:hover{opacity:.9;}
+.modal-error{color:var(--red);font-size:12px;margin-top:10px;display:none;}
+.modal-error.show{display:block;}
+
+/* TEAM HEADER */
+.team-header{
+  position:relative;
+  border-bottom:1px solid var(--border);
+  padding:32px 40px;
+  display:flex;
+  align-items:center;
+  gap:36px;
+  overflow:hidden;
+}
+.team-header-tint{position:absolute;inset:0;background:var(--tc-color, var(--orange));opacity:.08;pointer-events:none;}
+.team-header-logo-bg{position:absolute;right:-40px;top:50%;transform:translateY(-50%);width:340px;height:340px;object-fit:contain;opacity:.08;pointer-events:none;}
+.team-header-inner{position:relative;z-index:1;display:flex;align-items:center;gap:36px;width:100%;flex-wrap:wrap;}
+
+.team-hdr-logo{width:96px;height:96px;object-fit:contain;flex-shrink:0;}
+.team-hdr-id{display:flex;flex-direction:column;gap:4px;}
+.team-hdr-name{font-family:'Bebas Neue',sans-serif;font-size:38px;letter-spacing:2px;color:#fff;line-height:1;}
+.team-hdr-div{font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:var(--tc-color, var(--orange));font-weight:700;}
+.team-hdr-record{font-size:13px;color:var(--muted2);}
+.team-hdr-record b{color:var(--text);font-weight:700;}
+
+.team-hdr-staff{display:flex;flex-direction:column;gap:8px;margin-left:auto;padding:0 24px;border-left:1px solid var(--border);border-right:1px solid var(--border);}
+.staff-row{display:flex;gap:8px;align-items:baseline;font-size:12px;}
+.staff-role{color:var(--muted);min-width:90px;letter-spacing:.3px;}
+.staff-name{color:var(--text);font-weight:600;}
+
+.team-hdr-season{display:flex;flex-direction:column;gap:6px;flex-shrink:0;}
+.team-hdr-season label{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);}
+.season-select{background:var(--bg3);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:'Inter',sans-serif;font-size:14px;font-weight:600;padding:9px 14px;outline:none;min-width:110px;}
+.season-select:focus{border-color:var(--orange);}
+
+.team-body{padding:40px;text-align:center;color:var(--muted);}
+.team-body h3{font-family:'Bebas Neue',sans-serif;font-size:24px;color:#fff;letter-spacing:1px;margin-bottom:10px;}
+
+@media(max-width:900px){
+  .team-header{padding:24px 20px;}
+  .team-header-inner{gap:20px;}
+  .team-hdr-staff{margin-left:0;border-left:none;padding-left:0;}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="brand"><img class="brand-logo" src="data:image/png;base64,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" alt="Mics in Motion Logo">MICS IN <em>MOTION</em></a>
+  <div class="nav-mid">
+    <a href="index.html" class="nav-link">Home</a>
+    <a href="players.html" class="nav-link">Player DB</a>
+    <a href="team-hub.html" class="nav-link active">Team Hub</a>
+    <a href="rankings.html" class="nav-link">IDP Rankings</a>
+    <a href="college-scouting.html" class="nav-link" id="nav-scouting-link" style="display:none;">College Scouting</a>
+  </div>
+  <div class="auth-wrap" id="auth-wrap">
+    <button class="auth-btn" id="auth-open-btn">Login</button>
+  </div>
+</nav>
+
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <button class="modal-close" id="modal-close-btn">&times;</button>
+    <div class="modal-title">Login</div>
+    <div class="modal-field" style="margin-top:16px;"><label>Benutzername</label><input type="text" id="login-email" autocapitalize="off"></div>
+    <div class="modal-field"><label>Passwort</label><input type="password" id="login-pw"></div>
+    <button class="modal-submit" id="login-submit">Anmelden</button>
+    <div class="modal-error" id="modal-error"></div>
+  </div>
+</div>
+
+<div class="team-header" id="team-header" style="display:none;">
+  <div class="team-header-tint"></div>
+  <img class="team-header-logo-bg" id="team-header-logo-bg" src="" alt="">
+  <div class="team-header-inner">
+    <img class="team-hdr-logo" id="team-hdr-logo" src="" alt="">
+    <div class="team-hdr-id">
+      <div class="team-hdr-name" id="team-hdr-name">–</div>
+      <div class="team-hdr-div" id="team-hdr-div">–</div>
+      <div class="team-hdr-record" id="team-hdr-record">Record: <b>–</b></div>
+    </div>
+    <div class="team-hdr-staff">
+      <div class="staff-row"><span class="staff-role">Head Coach</span><span class="staff-name" id="staff-hc">–</span></div>
+      <div class="staff-row"><span class="staff-role">Def. Coordinator</span><span class="staff-name" id="staff-dc">–</span></div>
+      <div class="staff-row"><span class="staff-role">Off. Coordinator</span><span class="staff-name" id="staff-oc">–</span></div>
+    </div>
+    <div class="team-hdr-season">
+      <label>Season</label>
+      <select class="season-select" id="season-select"></select>
+    </div>
+  </div>
+</div>
+
+<div class="team-body">
+  <h3>Weitere Inhalte folgen</h3>
+  <p>Roster, Defensiv-Tendenzen, Snap Counts und mehr sind der nächste Ausbauschritt.</p>
+</div>
+
+<script type="module">
+import { watchAuth, loginUser, logoutUser } from './firebase-init.js';
+
+const authWrap = document.getElementById('auth-wrap');
+const overlay = document.getElementById('modal-overlay');
+const errEl = document.getElementById('modal-error');
+document.getElementById('auth-open-btn').addEventListener('click', () => overlay.classList.add('open'));
+document.getElementById('modal-close-btn').addEventListener('click', () => overlay.classList.remove('open'));
+overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('open'); });
+function showErr(msg){ errEl.textContent = msg; errEl.classList.add('show'); }
+function mapAuthError(e){
+  const c = e.code || '';
+  if(c.includes('invalid-credential')||c.includes('wrong-password')||c.includes('user-not-found')) return 'Benutzername oder Passwort falsch.';
+  return 'Fehler: ' + (e.message || 'unbekannt');
+}
+document.getElementById('login-submit').addEventListener('click', async () => {
+  errEl.classList.remove('show');
+  try{ await loginUser(document.getElementById('login-email').value, document.getElementById('login-pw').value); overlay.classList.remove('open'); }
+  catch(e){ showErr(mapAuthError(e)); }
+});
+watchAuth(user => {
+  const link = document.getElementById('nav-scouting-link');
+  if(link) link.style.display = user ? '' : 'none';
+  if(user){
+    const initial = (user.displayName || user.email || '?')[0].toUpperCase();
+    authWrap.innerHTML = `<div class="auth-user"><div class="auth-avatar">${initial}</div><div><div class="auth-name">${user.displayName||user.email}</div><button class="auth-logout" id="logout-btn">Logout</button></div></div>`;
+    document.getElementById('logout-btn').addEventListener('click', () => logoutUser());
+  } else {
+    authWrap.innerHTML = `<button class="auth-btn" id="auth-open-btn">Login</button>`;
+    document.getElementById('auth-open-btn').addEventListener('click', () => overlay.classList.add('open'));
+  }
+});
+
+// ─── TEAM-STAMMDATEN (statisch, identisch zu team-hub.html) ────────────────
+const ESPN_A = {ARI:'ari',ATL:'atl',BAL:'bal',BUF:'buf',CAR:'car',CHI:'chi',CIN:'cin',CLE:'cle',DAL:'dal',DEN:'den',DET:'det',GB:'gb',HOU:'hou',IND:'ind',JAX:'jax',KC:'kc',LAC:'lac',LAR:'lar',LV:'lv',MIA:'mia',MIN:'min',NE:'ne',NO:'no',NYG:'nyg',NYJ:'nyj',PHI:'phi',PIT:'pit',SF:'sf',SEA:'sea',TB:'tb',TEN:'ten',WAS:'wsh'};
+function logoUrl(abbr){ return `https://a.espncdn.com/i/teamlogos/nfl/500/${ESPN_A[abbr]}.png`; }
+
+const TEAMS = {
+  BUF:{city:'Buffalo',name:'Bills',conf:'AFC',div:'East',color:'#00338D'},
+  MIA:{city:'Miami',name:'Dolphins',conf:'AFC',div:'East',color:'#008E97'},
+  NE:{city:'New England',name:'Patriots',conf:'AFC',div:'East',color:'#C60C30'},
+  NYJ:{city:'New York',name:'Jets',conf:'AFC',div:'East',color:'#125740'},
+  BAL:{city:'Baltimore',name:'Ravens',conf:'AFC',div:'North',color:'#241773'},
+  CIN:{city:'Cincinnati',name:'Bengals',conf:'AFC',div:'North',color:'#FB4F14'},
+  CLE:{city:'Cleveland',name:'Browns',conf:'AFC',div:'North',color:'#FF3C00'},
+  PIT:{city:'Pittsburgh',name:'Steelers',conf:'AFC',div:'North',color:'#FFB612'},
+  HOU:{city:'Houston',name:'Texans',conf:'AFC',div:'South',color:'#A71930'},
+  IND:{city:'Indianapolis',name:'Colts',conf:'AFC',div:'South',color:'#002C5F'},
+  JAX:{city:'Jacksonville',name:'Jaguars',conf:'AFC',div:'South',color:'#D7A22A'},
+  TEN:{city:'Tennessee',name:'Titans',conf:'AFC',div:'South',color:'#4B92DB'},
+  DEN:{city:'Denver',name:'Broncos',conf:'AFC',div:'West',color:'#FB4F14'},
+  KC:{city:'Kansas City',name:'Chiefs',conf:'AFC',div:'West',color:'#E31837'},
+  LV:{city:'Las Vegas',name:'Raiders',conf:'AFC',div:'West',color:'#A5ACAF'},
+  LAC:{city:'Los Angeles',name:'Chargers',conf:'AFC',div:'West',color:'#0080C6'},
+  DAL:{city:'Dallas',name:'Cowboys',conf:'NFC',div:'East',color:'#869397'},
+  NYG:{city:'New York',name:'Giants',conf:'NFC',div:'East',color:'#0B2265'},
+  PHI:{city:'Philadelphia',name:'Eagles',conf:'NFC',div:'East',color:'#004C54'},
+  WAS:{city:'Washington',name:'Commanders',conf:'NFC',div:'East',color:'#FFB612'},
+  CHI:{city:'Chicago',name:'Bears',conf:'NFC',div:'North',color:'#C83803'},
+  DET:{city:'Detroit',name:'Lions',conf:'NFC',div:'North',color:'#0076B6'},
+  GB:{city:'Green Bay',name:'Packers',conf:'NFC',div:'North',color:'#FFB612'},
+  MIN:{city:'Minnesota',name:'Vikings',conf:'NFC',div:'North',color:'#4F2683'},
+  ATL:{city:'Atlanta',name:'Falcons',conf:'NFC',div:'South',color:'#A71930'},
+  CAR:{city:'Carolina',name:'Panthers',conf:'NFC',div:'South',color:'#0085CA'},
+  NO:{city:'New Orleans',name:'Saints',conf:'NFC',div:'South',color:'#D3BC8D'},
+  TB:{city:'Tampa Bay',name:'Buccaneers',conf:'NFC',div:'South',color:'#D50A0A'},
+  ARI:{city:'Arizona',name:'Cardinals',conf:'NFC',div:'West',color:'#97233F'},
+  LAR:{city:'Los Angeles',name:'Rams',conf:'NFC',div:'West',color:'#003594'},
+  SF:{city:'San Francisco',name:'49ers',conf:'NFC',div:'West',color:'#AA0000'},
+  SEA:{city:'Seattle',name:'Seahawks',conf:'NFC',div:'West',color:'#69BE28'},
+};
+
+// ─── SAISON-DATEN (Coaches + Record) ───────────────────────────────────────
+// TODO: Datenquelle noch offen (siehe Chat) — aktuell Platzhalter ("–"), damit
+// das Layout schon steht. Sobald geklärt, hier befüllen:
+// TEAM_SEASON_DATA[abbr][jahr] = { hc:'Name', dc:'Name', oc:'Name', record:'W-L' }
+const TEAM_SEASON_DATA = {};
+function getSeasonData(abbr, year){
+  return (TEAM_SEASON_DATA[abbr] && TEAM_SEASON_DATA[abbr][year]) || { hc:'–', dc:'–', oc:'–', record:'–' };
+}
+
+const MIN_YEAR = 2022;
+const NOW_YEAR = new Date().getFullYear();
+
+const params = new URLSearchParams(location.search);
+const abbr = (params.get('abbr') || '').toUpperCase();
+const team = TEAMS[abbr];
+
+if(team){
+  document.title = `${team.city} ${team.name} · Mics in Motion`;
+  const header = document.getElementById('team-header');
+  header.style.display = 'flex';
+  header.style.setProperty('--tc-color', team.color);
+  document.getElementById('team-header-logo-bg').src = logoUrl(abbr);
+  document.getElementById('team-hdr-logo').src = logoUrl(abbr);
+  document.getElementById('team-hdr-name').textContent = `${team.city} ${team.name}`;
+  document.getElementById('team-hdr-div').textContent = `${team.conf} ${team.div}`;
+
+  const yearSelect = document.getElementById('season-select');
+  const years = [];
+  for(let y = NOW_YEAR; y >= MIN_YEAR; y--) years.push(y);
+  yearSelect.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
+
+  function renderSeason(year){
+    const data = getSeasonData(abbr, year);
+    document.getElementById('team-hdr-record').innerHTML = `Record: <b>${data.record}</b>`;
+    document.getElementById('staff-hc').textContent = data.hc;
+    document.getElementById('staff-dc').textContent = data.dc;
+    document.getElementById('staff-oc').textContent = data.oc;
+  }
+  yearSelect.addEventListener('change', () => renderSeason(parseInt(yearSelect.value, 10)));
+  renderSeason(NOW_YEAR);
+} else {
+  document.querySelector('.team-body').innerHTML = `<h3>Team nicht gefunden</h3><p>Bitte über den <a href="team-hub.html" style="color:var(--orange)">Team Hub</a> ein Team auswählen.</p>`;
+}
+</script>
+
+</body>
+</html>

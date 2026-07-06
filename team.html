@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Team · Mics in Motion</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#080c10;--bg2:#0d1117;--bg3:#161b22;--bg4:#1c2128;
+  --border:#21262d;--border2:#30363d;
+  --text:#e6edf3;--muted:#7d8590;--muted2:#9198a1;
+  --orange:#C4722A;--orange-dim:#7a4419;--orange-glow:rgba(196,114,42,.15);
+  --red:#da3633;--radius:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;}
+
+nav{background:rgba(13,17,23,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 32px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.brand{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;color:#fff;text-decoration:none;display:flex;align-items:center;gap:10px;}
+.brand-logo{width:32px;height:32px;display:block;}
+.brand em{color:var(--orange);font-style:normal;}
+.nav-mid{display:flex;gap:4px;}
+.nav-link{font-size:13px;font-weight:500;color:var(--muted);text-decoration:none;padding:6px 12px;border-radius:6px;transition:all .15s;}
+.nav-link:hover{color:var(--text);background:var(--bg3);}
+.nav-link.active{color:var(--orange);background:var(--orange-glow);}
+.auth-wrap{display:flex;align-items:center;gap:10px;}
+.auth-btn{font-size:12px;font-weight:600;letter-spacing:.5px;color:var(--text);background:var(--bg3);border:1px solid var(--border);padding:7px 16px;border-radius:6px;cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif;}
+.auth-btn:hover{border-color:var(--orange);}
+.auth-user{display:flex;align-items:center;gap:10px;}
+.auth-avatar{width:30px;height:30px;border-radius:50%;background:var(--orange);color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:14px;}
+.auth-name{font-size:13px;font-weight:500;color:var(--text);}
+.auth-logout{font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;font-family:'Inter',sans-serif;}
+.auth-logout:hover{color:var(--text);}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;z-index:500;backdrop-filter:blur(3px);}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:32px;width:100%;max-width:360px;position:relative;}
+.modal-close{position:absolute;top:14px;right:16px;background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;line-height:1;}
+.modal-close:hover{color:var(--text);}
+.modal-title{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:2px;color:#fff;margin-bottom:4px;}
+.modal-field{margin-bottom:14px;}
+.modal-field label{display:block;font-size:11px;color:var(--muted);margin-bottom:6px;letter-spacing:.5px;}
+.modal-field input{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:10px 12px;color:var(--text);font-size:13px;font-family:'Inter',sans-serif;outline:none;}
+.modal-field input:focus{border-color:var(--orange);}
+.modal-submit{width:100%;background:var(--orange);color:#fff;border:none;padding:11px;border-radius:6px;font-weight:600;font-size:13px;cursor:pointer;margin-top:6px;font-family:'Inter',sans-serif;}
+.modal-submit:hover{opacity:.9;}
+.modal-error{color:var(--red);font-size:12px;margin-top:10px;display:none;}
+.modal-error.show{display:block;}
+
+/* TEAM HEADER */
+.team-header{
+  position:relative;
+  border-bottom:1px solid var(--border);
+  padding:32px 40px;
+  display:flex;
+  align-items:center;
+  gap:36px;
+  overflow:hidden;
+}
+.team-header-tint{position:absolute;inset:0;background:var(--tc-color, var(--orange));opacity:.08;pointer-events:none;}
+.team-header-logo-bg{position:absolute;right:-40px;top:50%;transform:translateY(-50%);width:340px;height:340px;object-fit:contain;opacity:.08;pointer-events:none;}
+.team-header-inner{position:relative;z-index:1;display:flex;align-items:center;gap:36px;width:100%;flex-wrap:wrap;}
+
+.team-hdr-logo{width:96px;height:96px;object-fit:contain;flex-shrink:0;}
+.team-hdr-id{display:flex;flex-direction:column;gap:4px;}
+.team-hdr-name{font-family:'Bebas Neue',sans-serif;font-size:38px;letter-spacing:2px;color:#fff;line-height:1;}
+.team-hdr-div{font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:var(--tc-color, var(--orange));font-weight:700;}
+.team-hdr-record{font-size:13px;color:var(--muted2);}
+.team-hdr-record b{color:var(--text);font-weight:700;}
+
+.team-hdr-staff{display:flex;flex-direction:column;gap:8px;margin-left:auto;padding:0 24px;border-left:1px solid var(--border);border-right:1px solid var(--border);}
+.staff-row{display:flex;gap:8px;align-items:baseline;font-size:12px;}
+.staff-role{color:var(--muted);min-width:90px;letter-spacing:.3px;}
+.staff-name{color:var(--text);font-weight:600;}
+
+.team-hdr-divrank{display:flex;flex-direction:column;gap:6px;padding:0 24px;border-right:1px solid var(--border);min-width:170px;}
+.divrank-title{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:2px;}
+.divrank-row{display:flex;justify-content:space-between;gap:10px;font-size:12px;color:var(--muted2);}
+.divrank-row.me{color:#fff;font-weight:700;}
+.divrank-row .dr-rec{color:var(--muted);}
+.divrank-row.me .dr-rec{color:var(--orange);}
+
+.team-hdr-season{display:flex;flex-direction:column;gap:6px;flex-shrink:0;}
+.team-hdr-season label{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);}
+.season-select{background:var(--bg3);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:'Inter',sans-serif;font-size:14px;font-weight:600;padding:9px 14px;outline:none;min-width:110px;}
+.season-select:focus{border-color:var(--orange);}
+
+.team-body{padding:32px 40px;}
+.team-body h3{font-family:'Bebas Neue',sans-serif;font-size:24px;color:#fff;letter-spacing:1px;margin-bottom:10px;}
+.dc-loading, .dc-empty{color:var(--muted);font-size:13px;text-align:center;padding:40px 0;}
+#dc-container{display:grid;grid-template-columns:repeat(3, 1fr);gap:16px;align-items:start;}
+@media(max-width:1100px){ #dc-container{grid-template-columns:1fr;} }
+
+/* SCHEDULE & STANDINGS */
+.sched-half-wrap{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start;}
+@media(max-width:1100px){ .sched-half-wrap{grid-template-columns:1fr;} }
+#sched-container{display:flex;flex-direction:column;gap:16px;}
+.standings-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+@media(max-width:700px){ .standings-row{grid-template-columns:1fr;} }
+.sched-table{width:100%;border-collapse:collapse;font-size:12px;}
+.sched-table th{text-align:left;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);padding:9px 14px;border-bottom:1px solid var(--border);background:var(--bg2);}
+.sched-table td{padding:8px 14px;border-bottom:1px solid var(--border);white-space:nowrap;}
+.sched-table tr:last-child td{border-bottom:none;}
+.sched-table tr.win td.sched-result{color:#2ea043;font-weight:700;}
+.sched-table tr.loss td.sched-result{color:var(--red);font-weight:700;}
+.sched-table tr.tie td.sched-result{color:var(--muted2);font-weight:700;}
+.sched-table tr.upcoming td.sched-result{color:var(--muted);}
+.sched-opp{display:flex;align-items:center;gap:8px;}
+.sched-team-logo{width:20px;height:20px;object-fit:contain;flex-shrink:0;}
+.standings-table{width:100%;border-collapse:collapse;font-size:12px;}
+.standings-table th{text-align:left;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);padding:8px 12px;border-bottom:1px solid var(--border);background:var(--bg2);}
+.standings-table td{padding:7px 12px;border-bottom:1px solid var(--border);}
+.standings-table tr:last-child td{border-bottom:none;}
+.standings-table tr.me-row td{background:var(--orange-glow);font-weight:700;color:#fff;}
+.standings-div-hdr td{background:var(--bg4);font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);font-weight:700;padding:6px 12px;}
+.dc-glossary{margin-top:24px;border:1px solid var(--border);border-radius:10px;background:var(--bg2);padding:18px 20px;}
+.dc-glossary-title{font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1.5px;color:#fff;margin-bottom:12px;}
+.dc-glossary-grid{display:grid;grid-template-columns:repeat(auto-fill, minmax(220px, 1fr));gap:6px 20px;}
+.dc-glossary-item{font-size:12px;color:var(--muted);display:flex;gap:8px;}
+.dc-glossary-item b{color:var(--orange);min-width:38px;flex-shrink:0;}
+
+/* DEPTH CHART */
+.dc-heading{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;color:#fff;margin-bottom:6px;display:flex;align-items:center;gap:12px;}
+.dc-source-badge{font-family:'Inter',sans-serif;font-size:10px;font-weight:700;letter-spacing:.5px;color:var(--muted);background:var(--bg3);border:1px solid var(--border2);border-radius:4px;padding:3px 9px;text-transform:none;}
+.dc-subline{font-size:12px;color:var(--muted);margin-bottom:20px;}
+.dc-section{margin-bottom:14px;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--bg2);}
+.dc-section-hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;cursor:pointer;background:var(--bg3);user-select:none;}
+.dc-section-hdr:hover{background:var(--bg4);}
+.dc-section-title{font-family:'Bebas Neue',sans-serif;font-size:19px;letter-spacing:1.5px;color:#fff;display:flex;align-items:center;gap:10px;}
+.dc-section-title .dc-badge{font-family:'Inter',sans-serif;font-size:10px;font-weight:700;letter-spacing:.5px;color:var(--muted);background:var(--bg4);border:1px solid var(--border2);border-radius:4px;padding:2px 8px;text-transform:none;}
+.dc-chevron{color:var(--muted);font-size:13px;transition:transform .2s;}
+.dc-section.open .dc-chevron{transform:rotate(180deg);}
+.dc-section-body{display:none;padding:0;overflow-x:auto;}
+.dc-section.open .dc-section-body{display:block;}
+.dc-table{width:100%;border-collapse:collapse;font-size:13px;}
+.dc-table th{text-align:left;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);padding:10px 16px;border-bottom:1px solid var(--border);background:var(--bg2);position:sticky;top:0;}
+.dc-table td{padding:9px 16px;border-bottom:1px solid var(--border);white-space:nowrap;}
+.dc-table tr:last-child td{border-bottom:none;}
+.dc-table tr:hover td{background:var(--bg3);}
+.dc-pos-cell{font-weight:700;color:var(--orange);font-size:12px;letter-spacing:.5px;}
+.dc-player-cell a{color:var(--text);text-decoration:none;}
+.dc-player-cell a:hover{color:var(--orange);text-decoration:underline;}
+.dc-player-cell.empty{color:var(--muted);}
+
+@media(max-width:900px){
+  .team-header{padding:24px 20px;}
+  .team-header-inner{gap:20px;}
+  .team-hdr-staff{margin-left:0;border-left:none;padding-left:0;}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="brand"><img class="brand-logo" src="data:image/png;base64,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" alt="Mics in Motion Logo">MICS IN <em>MOTION</em></a>
+  <div class="nav-mid">
+    <a href="index.html" class="nav-link">Home</a>
+    <a href="players.html" class="nav-link">Player DB</a>
+    <a href="team-hub.html" class="nav-link active">Team Hub</a>
+    <a href="rankings.html" class="nav-link">IDP Rankings</a>
+    <a href="college-scouting.html" class="nav-link" id="nav-scouting-link" style="display:none;">College Scouting</a>
+  </div>
+  <div class="auth-wrap" id="auth-wrap">
+    <button class="auth-btn" id="auth-open-btn">Login</button>
+  </div>
+</nav>
+
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <button class="modal-close" id="modal-close-btn">&times;</button>
+    <div class="modal-title">Login</div>
+    <div class="modal-field" style="margin-top:16px;"><label>Benutzername</label><input type="text" id="login-email" autocapitalize="off"></div>
+    <div class="modal-field"><label>Passwort</label><input type="password" id="login-pw"></div>
+    <button class="modal-submit" id="login-submit">Anmelden</button>
+    <div class="modal-error" id="modal-error"></div>
+  </div>
+</div>
+
+<div class="team-header" id="team-header" style="display:none;">
+  <div class="team-header-tint"></div>
+  <img class="team-header-logo-bg" id="team-header-logo-bg" src="" alt="">
+  <div class="team-header-inner">
+    <img class="team-hdr-logo" id="team-hdr-logo" src="" alt="">
+    <div class="team-hdr-id">
+      <div class="team-hdr-name" id="team-hdr-name">–</div>
+      <div class="team-hdr-div" id="team-hdr-div">–</div>
+      <div class="team-hdr-record" id="team-hdr-record">Record: <b>–</b></div>
+    </div>
+    <div class="team-hdr-divrank" id="team-hdr-divrank">
+      <div class="divrank-title" id="divrank-title">Division</div>
+      <div class="divrank-list" id="divrank-list"></div>
+    </div>
+    <div class="team-hdr-staff">
+      <div class="staff-row"><span class="staff-role">Head Coach</span><span class="staff-name" id="staff-hc">–</span></div>
+      <div class="staff-row"><span class="staff-role">Def. Coordinator</span><span class="staff-name" id="staff-dc">–</span></div>
+      <div class="staff-row"><span class="staff-role">Off. Coordinator</span><span class="staff-name" id="staff-oc">–</span></div>
+    </div>
+    <div class="team-hdr-season">
+      <label>Season</label>
+      <select class="season-select" id="season-select"></select>
+    </div>
+  </div>
+</div>
+
+<div class="team-body" id="team-body">
+  <div class="dc-heading">Depth Chart <span class="dc-source-badge" id="dc-source-badge"></span></div>
+  <div class="dc-subline" id="dc-subline"></div>
+  <div class="dc-loading" id="dc-status">Lade Depth Chart…</div>
+  <div id="dc-container"></div>
+  <div class="dc-glossary" id="dc-glossary" style="display:none;">
+    <div class="dc-glossary-title">Positions-Glossar</div>
+    <div class="dc-glossary-grid" id="dc-glossary-grid"></div>
+  </div>
+
+  <div class="dc-heading" style="margin-top:36px;">Schedule &amp; Standings</div>
+  <div class="sched-half-wrap">
+    <div>
+      <div class="dc-loading" id="sched-status">Lade Schedule &amp; Standings…</div>
+      <div id="sched-container"></div>
+    </div>
+    <div id="sched-right-placeholder"></div>
+  </div>
+</div>
+
+
+<script type="module">
+import { watchAuth, loginUser, logoutUser } from './firebase-init.js';
+
+const authWrap = document.getElementById('auth-wrap');
+const overlay = document.getElementById('modal-overlay');
+const errEl = document.getElementById('modal-error');
+document.getElementById('auth-open-btn').addEventListener('click', () => overlay.classList.add('open'));
+document.getElementById('modal-close-btn').addEventListener('click', () => overlay.classList.remove('open'));
+overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('open'); });
+function showErr(msg){ errEl.textContent = msg; errEl.classList.add('show'); }
+function mapAuthError(e){
+  const c = e.code || '';
+  if(c.includes('invalid-credential')||c.includes('wrong-password')||c.includes('user-not-found')) return 'Benutzername oder Passwort falsch.';
+  return 'Fehler: ' + (e.message || 'unbekannt');
+}
+document.getElementById('login-submit').addEventListener('click', async () => {
+  errEl.classList.remove('show');
+  try{ await loginUser(document.getElementById('login-email').value, document.getElementById('login-pw').value); overlay.classList.remove('open'); }
+  catch(e){ showErr(mapAuthError(e)); }
+});
+watchAuth(user => {
+  const link = document.getElementById('nav-scouting-link');
+  if(link) link.style.display = user ? '' : 'none';
+  if(user){
+    const initial = (user.displayName || user.email || '?')[0].toUpperCase();
+    authWrap.innerHTML = `<div class="auth-user"><div class="auth-avatar">${initial}</div><div><div class="auth-name">${user.displayName||user.email}</div><button class="auth-logout" id="logout-btn">Logout</button></div></div>`;
+    document.getElementById('logout-btn').addEventListener('click', () => logoutUser());
+  } else {
+    authWrap.innerHTML = `<button class="auth-btn" id="auth-open-btn">Login</button>`;
+    document.getElementById('auth-open-btn').addEventListener('click', () => overlay.classList.add('open'));
+  }
+});
+
+// ─── TEAM-STAMMDATEN (statisch, identisch zu team-hub.html) ────────────────
+const ESPN_A = {ARI:'ari',ATL:'atl',BAL:'bal',BUF:'buf',CAR:'car',CHI:'chi',CIN:'cin',CLE:'cle',DAL:'dal',DEN:'den',DET:'det',GB:'gb',HOU:'hou',IND:'ind',JAX:'jax',KC:'kc',LAC:'lac',LAR:'lar',LV:'lv',MIA:'mia',MIN:'min',NE:'ne',NO:'no',NYG:'nyg',NYJ:'nyj',PHI:'phi',PIT:'pit',SF:'sf',SEA:'sea',TB:'tb',TEN:'ten',WAS:'wsh'};
+function logoUrl(abbr){ return `https://a.espncdn.com/i/teamlogos/nfl/500/${ESPN_A[abbr]}.png`; }
+
+const TEAMS = {
+  BUF:{city:'Buffalo',name:'Bills',conf:'AFC',div:'East',color:'#00338D'},
+  MIA:{city:'Miami',name:'Dolphins',conf:'AFC',div:'East',color:'#008E97'},
+  NE:{city:'New England',name:'Patriots',conf:'AFC',div:'East',color:'#C60C30'},
+  NYJ:{city:'New York',name:'Jets',conf:'AFC',div:'East',color:'#125740'},
+  BAL:{city:'Baltimore',name:'Ravens',conf:'AFC',div:'North',color:'#241773'},
+  CIN:{city:'Cincinnati',name:'Bengals',conf:'AFC',div:'North',color:'#FB4F14'},
+  CLE:{city:'Cleveland',name:'Browns',conf:'AFC',div:'North',color:'#FF3C00'},
+  PIT:{city:'Pittsburgh',name:'Steelers',conf:'AFC',div:'North',color:'#FFB612'},
+  HOU:{city:'Houston',name:'Texans',conf:'AFC',div:'South',color:'#A71930'},
+  IND:{city:'Indianapolis',name:'Colts',conf:'AFC',div:'South',color:'#002C5F'},
+  JAX:{city:'Jacksonville',name:'Jaguars',conf:'AFC',div:'South',color:'#D7A22A'},
+  TEN:{city:'Tennessee',name:'Titans',conf:'AFC',div:'South',color:'#4B92DB'},
+  DEN:{city:'Denver',name:'Broncos',conf:'AFC',div:'West',color:'#FB4F14'},
+  KC:{city:'Kansas City',name:'Chiefs',conf:'AFC',div:'West',color:'#E31837'},
+  LV:{city:'Las Vegas',name:'Raiders',conf:'AFC',div:'West',color:'#A5ACAF'},
+  LAC:{city:'Los Angeles',name:'Chargers',conf:'AFC',div:'West',color:'#0080C6'},
+  DAL:{city:'Dallas',name:'Cowboys',conf:'NFC',div:'East',color:'#869397'},
+  NYG:{city:'New York',name:'Giants',conf:'NFC',div:'East',color:'#0B2265'},
+  PHI:{city:'Philadelphia',name:'Eagles',conf:'NFC',div:'East',color:'#004C54'},
+  WAS:{city:'Washington',name:'Commanders',conf:'NFC',div:'East',color:'#FFB612'},
+  CHI:{city:'Chicago',name:'Bears',conf:'NFC',div:'North',color:'#C83803'},
+  DET:{city:'Detroit',name:'Lions',conf:'NFC',div:'North',color:'#0076B6'},
+  GB:{city:'Green Bay',name:'Packers',conf:'NFC',div:'North',color:'#FFB612'},
+  MIN:{city:'Minnesota',name:'Vikings',conf:'NFC',div:'North',color:'#4F2683'},
+  ATL:{city:'Atlanta',name:'Falcons',conf:'NFC',div:'South',color:'#A71930'},
+  CAR:{city:'Carolina',name:'Panthers',conf:'NFC',div:'South',color:'#0085CA'},
+  NO:{city:'New Orleans',name:'Saints',conf:'NFC',div:'South',color:'#D3BC8D'},
+  TB:{city:'Tampa Bay',name:'Buccaneers',conf:'NFC',div:'South',color:'#D50A0A'},
+  ARI:{city:'Arizona',name:'Cardinals',conf:'NFC',div:'West',color:'#97233F'},
+  LAR:{city:'Los Angeles',name:'Rams',conf:'NFC',div:'West',color:'#003594'},
+  SF:{city:'San Francisco',name:'49ers',conf:'NFC',div:'West',color:'#AA0000'},
+  SEA:{city:'Seattle',name:'Seahawks',conf:'NFC',div:'West',color:'#69BE28'},
+};
+
+// ─── SAISON-DATEN: COACHES ──────────────────────────────────────────────
+// Update: Der zuvor getestete ESPN-Endpunkt (site.api.espn.com/teams/{id}) liefert
+// tatsächlich nur den aktuellen Coach — ABER es gibt einen ANDEREN, season-spezifischen
+// Endpunkt, der bestätigt korrekt funktioniert (Test: seasons/2021/teams/12/coaches ->
+// Andy Reid, nicht der heutige Coach). Liefert nur den Head Coach, keine Koordinatoren
+// (ESPN trackt DC/OC nirgends öffentlich pro Team-Saison) — TEAM_SEASON_DATA bleibt
+// als manuelle Ergänzung für DC/OC bestehen, falls die gepflegt werden soll.
+const TEAM_SEASON_DATA = {};
+function getCoachData(abbr, year){
+  return (TEAM_SEASON_DATA[abbr] && TEAM_SEASON_DATA[abbr][year]) || { hc:null, dc:null, oc:null };
+}
+
+const headCoachCache = {};
+async function fetchHeadCoach(abbr, year){
+  // Kurskorrektur: dasselbe Muster wie bei den Depth Charts ist zu erwarten — der
+  // "season-spezifische" Test (Andy Reid 2021 = KC-Coach) war kein echter Beweis,
+  // weil Reid seit 2013 durchgehend Coach ist und der Test somit nicht zwischen
+  // "wirklich historisch" und "gibt einfach den aktuellen Coach zurück" unterscheiden
+  // konnte. Ohne belastbaren Gegenbeweis nur noch für die aktuelle Season nutzen.
+  if(year !== CURRENT_SEASON_YEAR) return null;
+  const teamId = ESPN_TEAM_ID[abbr];
+  if(!teamId) return null;
+  const cacheKey = `${abbr}_${year}`;
+  if(cacheKey in headCoachCache) return headCoachCache[cacheKey];
+  try{
+    const listUrl = `https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/${year}/teams/${teamId}/coaches`;
+    const list = await fetch(listUrl).then(r => r.json());
+    const ref = list.items && list.items[0] && list.items[0].$ref;
+    if(!ref){ headCoachCache[cacheKey] = null; return null; }
+    const detail = await fetch(ref.replace('http://','https://')).then(r => r.json());
+    const name = (detail.firstName && detail.lastName) ? `${detail.firstName} ${detail.lastName}` : null;
+    headCoachCache[cacheKey] = name;
+    return name;
+  }catch(e){
+    console.warn('Head Coach konnte nicht geladen werden für', abbr, year, e);
+    headCoachCache[cacheKey] = null;
+    return null;
+  }
+}
+
+// Numerische ESPN-Team-IDs (stabile, altbekannte IDs — anders als die Abkürzungen,
+// die wir sonst überall nutzen). Nötig für Record- und Depth-Chart-Endpunkte.
+const ESPN_TEAM_ID = {ATL:1,BUF:2,CHI:3,CIN:4,CLE:5,DAL:6,DEN:7,DET:8,GB:9,TEN:10,IND:11,KC:12,LV:13,LAR:14,MIA:15,MIN:16,NE:17,NO:18,NYG:19,NYJ:20,PHI:21,ARI:22,PIT:23,LAC:24,SF:25,SEA:26,TB:27,WAS:28,CAR:29,JAX:30,BAL:33,HOU:34};
+
+// LIVE-RECORD (bestätigt zuverlässig, siehe Chat-Test: Bills 2024 -> "13-4").
+// season_type: 2 = Regular Season (1 = Preseason, 3 = Postseason)
+async function fetchLiveRecord(abbr, year, seasonType = 2){
+  const teamId = ESPN_TEAM_ID[abbr];
+  if(!teamId) return null;
+  try{
+    const listUrl = `https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/${year}/types/${seasonType}/teams/${teamId}/record`;
+    const list = await fetch(listUrl).then(r => r.json());
+    const overallRef = list.items && list.items[0] && list.items[0].$ref;
+    if(!overallRef) return null;
+    const detail = await fetch(overallRef.replace('http://','https://')).then(r => r.json());
+    return detail.displayValue || detail.summary || null; // z.B. "13-4"
+  }catch(e){
+    console.warn('Live-Record konnte nicht geladen werden für', abbr, year, e);
+    return null;
+  }
+}
+
+// ─── SCHEDULE & STANDINGS ────────────────────────────────────────────────
+// Nutzt ausschließlich sports.core.api.espn.com (nicht das CORS-blockierte
+// site.api.espn.com). Team-IDs aus Refs lösen wir über unsere eigene
+// ESPN_TEAM_ID-Tabelle auf, statt zusätzliche Team-Detail-Fetches zu machen.
+const ESPN_TEAM_ID_TO_ABBR = Object.fromEntries(Object.entries(ESPN_TEAM_ID).map(([abbr,id]) => [String(id), abbr]));
+
+function extractIdFromRef(ref){
+  if(!ref) return null;
+  const m = ref.match(/\/(\d+)(?:\?|$)/);
+  return m ? m[1] : null;
+}
+
+// Core-API-Felder sind oft {$ref: "..."} statt direkter Werte — bei Bedarf nachladen.
+async function resolveMaybeRef(obj, field){
+  if(!obj || obj[field] == null) return null;
+  const v = obj[field];
+  if(typeof v === 'object' && v.$ref){
+    try{ return await fetch(v.$ref.replace('http://','https://')).then(r=>r.json()); }catch(e){ return null; }
+  }
+  return v;
+}
+
+async function fetchTeamSchedule(abbr, year){
+  const teamId = ESPN_TEAM_ID[abbr];
+  if(!teamId) return null;
+  try{
+    const listUrl = `https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/${year}/types/2/teams/${teamId}/events`;
+    const list = await fetch(listUrl).then(r => r.json());
+    if(!list.items || !list.items.length) return null;
+
+    const games = await Promise.all(list.items.map(async item => {
+      try{
+        const ev = await fetch(item.$ref.replace('http://','https://')).then(r=>r.json());
+        const comp = ev.competitions && ev.competitions[0];
+        if(!comp) return null;
+        const competitors = comp.competitors || [];
+        const meComp = competitors.find(c => extractIdFromRef(c.team && c.team.$ref) === String(teamId));
+        const oppComp = competitors.find(c => c !== meComp);
+        if(!meComp || !oppComp) return null;
+        const oppId = extractIdFromRef(oppComp.team && oppComp.team.$ref);
+        const oppAbbr = ESPN_TEAM_ID_TO_ABBR[oppId] || '???';
+        const isHome = meComp.homeAway === 'home';
+
+        const status = await resolveMaybeRef(comp, 'status');
+        const completed = !!(status && status.type && status.type.completed);
+
+        let myScore = null, oppScore = null;
+        if(completed){
+          const meScoreObj = await resolveMaybeRef(meComp, 'score');
+          const oppScoreObj = await resolveMaybeRef(oppComp, 'score');
+          myScore = meScoreObj ? parseFloat(meScoreObj.value ?? meScoreObj.displayValue) : null;
+          oppScore = oppScoreObj ? parseFloat(oppScoreObj.value ?? oppScoreObj.displayValue) : null;
+        }
+
+        return { date: ev.date, opp: oppAbbr, isHome, completed, myScore, oppScore };
+      }catch(e){ return null; }
+    }));
+
+    return games.filter(Boolean).sort((a,b) => new Date(a.date) - new Date(b.date));
+  }catch(e){
+    console.warn('Schedule konnte nicht geladen werden für', abbr, year, e);
+    return null;
+  }
+}
+
+// Group-IDs (Conference/Division) sind online kaum dokumentiert und nicht garantiert
+// stabil — deshalb pro Season einmal live entdecken (per Namensabgleich) statt
+// hart zu kodieren. Live gegengetestet: seasons/2021/types/2/groups/1/standings/0
+// lieferte exakt die NFC East (Dallas 12-5, Philadelphia 9-8, Washington 7-10,
+// NY Giants 4-13) — Prinzip funktioniert, nur die ID pro Season/Gruppe variiert ggf.
+const standingsGroupsCache = {};
+async function discoverStandingsGroups(year){
+  const cacheKey = String(year);
+  if(standingsGroupsCache[cacheKey]) return standingsGroupsCache[cacheKey];
+  try{
+    const listUrl = `https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/${year}/types/2/groups?limit=20`;
+    const list = await fetch(listUrl).then(r => r.json());
+    const groups = await Promise.all((list.items||[]).map(async item => {
+      try{
+        const g = await fetch(item.$ref.replace('http://','https://')).then(r=>r.json());
+        return { id: extractIdFromRef(item.$ref), name: g.name || '', abbreviation: g.abbreviation || '' };
+      }catch(e){ return null; }
+    }));
+    const result = groups.filter(Boolean);
+    standingsGroupsCache[cacheKey] = result;
+    return result;
+  }catch(e){
+    console.warn('Standings-Gruppen konnten nicht geladen werden für', year, e);
+    return [];
+  }
+}
+
+function findConferenceGroup(groups, confAbbr){
+  const fullName = confAbbr === 'AFC' ? 'american football conference' : 'national football conference';
+  return groups.find(g => g.abbreviation === confAbbr || (g.name||'').toLowerCase().includes(fullName));
+}
+
+function findDivisionGroup(groups, confAbbr, div){
+  const target = `${confAbbr} ${div}`.toLowerCase();
+  return groups.find(g => (g.name||'').toLowerCase() === target || (g.name||'').toLowerCase().includes(target));
+}
+
+async function fetchGroupStandings(year, groupId){
+  if(!groupId) return null;
+  try{
+    const url = `https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/${year}/types/2/groups/${groupId}/standings/0`;
+    const data = await fetch(url).then(r=>r.json());
+    const entries = data.standings || [];
+    // WICHTIG (live gegen die echte API geprüft): Stats liegen NICHT direkt auf dem
+    // Eintrag, sondern verschachtelt unter records[] — der Eintrag mit name:"overall"
+    // enthält die Saison-Gesamtwerte (wins/losses/ties) in seinem eigenen .stats-Array,
+    // plus praktischerweise gleich ein fertiges "summary"-Feld (z.B. "12-5").
+    return entries.map(e => {
+      const teamId = extractIdFromRef(e.team && e.team.$ref);
+      const abbr = ESPN_TEAM_ID_TO_ABBR[teamId] || '???';
+      const overall = (e.records || []).find(r => r.name === 'overall') || (e.records || [])[0];
+      const stats = (overall && overall.stats) || [];
+      const find = (name) => { const s = stats.find(s => s.name === name); return s ? s.value : null; };
+      return { abbr, wins: find('wins'), losses: find('losses'), ties: find('ties'), summary: overall ? overall.summary : null };
+    }).filter(r => r.abbr !== '???');
+  }catch(e){
+    console.warn('Standings konnten nicht geladen werden für Gruppe', groupId, year, e);
+    return null;
+  }
+}
+
+// ─── ESPN-ID CROSSWALK über nflverse (löst ESPN-Athlet-IDs zu unseren eigenen
+// Sleeper-IDs auf, damit Depth-Chart-Spieler auf player.html verlinkt werden
+// können). Ein einziger Fetch reicht — espn_id/sleeper_id sind pro Person fix,
+// nicht saisonabhängig. Gleicher bewährter Proxy-Weg wie in player.html.
+const ESPNID_CACHE_KEY = 'mim_espnid_crosswalk_v1', ESPNID_CACHE_TS = 'mim_espnid_crosswalk_ts_v1', ESPNID_CACHE_TTL = 7*24*60*60*1000;
+let espnIdToSleeper = null;
+
+function parseCsvLine(line){
+  // einfacher CSV-Parser, der auch Felder mit Kommas in Anführungszeichen korrekt behandelt
+  const out = []; let cur = ''; let inQ = false;
+  for(let i=0;i<line.length;i++){
+    const c = line[i];
+    if(c === '"'){ inQ = !inQ; continue; }
+    if(c === ',' && !inQ){ out.push(cur); cur=''; continue; }
+    cur += c;
+  }
+  out.push(cur);
+  return out;
+}
+
+// Eigener Cloudflare Worker — dauerhaft zuverlässig, da er uns gehört (siehe Chat).
+// Wird von mehreren Funktionen geteilt (nflverse-CSV, ourlads).
+const MIM_WORKER = 'https://mics-in-motion.tarik-hurem96.workers.dev/?url=';
+
+async function fetchNflverseCSV(url){
+  const attempts = [
+    `${MIM_WORKER}${encodeURIComponent(url)}`,
+    `https://proxy.corsfix.com/?${url}`,
+    `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
+    `https://cors.sh/${url}`,
+    `https://corsproxy.io/?url=${encodeURIComponent(url)}`
+  ];
+  for(const a of attempts){
+    try{
+      const r = await fetch(a);
+      if(!r.ok) continue;
+      const text = a.includes('allorigins') ? (await r.json()).contents : await r.text();
+      if(text && text.length > 100) return text;
+    }catch(e){}
+  }
+  return null;
+}
+
+async function loadEspnIdCrosswalk(){
+  if(espnIdToSleeper) return espnIdToSleeper;
+  try{
+    const ts = localStorage.getItem(ESPNID_CACHE_TS);
+    if(ts && Date.now()-parseInt(ts) < ESPNID_CACHE_TTL){
+      const cached = localStorage.getItem(ESPNID_CACHE_KEY);
+      if(cached){ espnIdToSleeper = JSON.parse(cached); return espnIdToSleeper; }
+    }
+  }catch{}
+
+  espnIdToSleeper = {};
+  const text = await fetchNflverseCSV(`https://github.com/nflverse/nflverse-data/releases/download/rosters/roster_${NOW_YEAR-1}.csv`);
+  if(text){
+    const lines = text.split('\n').filter(l => l.trim());
+    const header = parseCsvLine(lines[0]).map(h => h.trim().toLowerCase());
+    const espnIdx = header.indexOf('espn_id');
+    const sleeperIdx = header.indexOf('sleeper_id');
+    if(espnIdx !== -1 && sleeperIdx !== -1){
+      for(let i=1;i<lines.length;i++){
+        const cols = parseCsvLine(lines[i]);
+        const espnId = (cols[espnIdx]||'').trim();
+        const sleeperId = (cols[sleeperIdx]||'').trim();
+        if(espnId && sleeperId && espnId !== 'NA' && sleeperId !== 'NA'){
+          espnIdToSleeper[espnId] = sleeperId;
+        }
+      }
+    } else {
+      console.warn('espn_id/sleeper_id Spalten nicht gefunden in Roster-CSV, Header:', header);
+    }
+  } else {
+    console.warn('nflverse Roster-CSV konnte nicht geladen werden — Depth-Chart-Spieler werden ohne Profil-Link angezeigt.');
+  }
+  try{ localStorage.setItem(ESPNID_CACHE_KEY, JSON.stringify(espnIdToSleeper)); localStorage.setItem(ESPNID_CACHE_TS, Date.now().toString()); }catch{}
+  return espnIdToSleeper;
+}
+
+// ─── STICHTAG: ab 1. März zählt bereits die neue Season als "aktuell" ──────
+function isPastMarch1(d){ return d >= new Date(d.getFullYear(), 2, 1); }
+const CURRENT_SEASON_YEAR = isPastMarch1(new Date()) ? new Date().getFullYear() : new Date().getFullYear() - 1;
+
+// Gemeinsamer Zugriff über unseren eigenen Worker (siehe Chat) — für nflverse UND ourlads
+async function fetchViaWorker(url){
+  try{
+    const r = await fetch(`${MIM_WORKER}${encodeURIComponent(url)}`);
+    if(!r.ok) return null;
+    return await r.text();
+  }catch(e){ return null; }
+}
+
+// ─── DEPTH CHART — QUELLE 1: ESPN LIVE (nur aktuelle Season, bestätigt CORS-frei) ──
+const DEF_POS_KEYS = ['lde','rde','ldt','rdt','nt','dt','de','wlb','mlb','slb','lolb','rolb','lb','lcb','rcb','cb','fs','ss','s','ilb','olb'];
+const OFF_POS_KEYS = ['qb','rb','fb','wr','lwr','rwr','slwr','te','lt','lg','c','rg','rt','wr1','wr2','wr3'];
+const ST_POS_KEYS  = ['pk','p','ls','kr','pr','h'];
+
+function classifyFormation(positionsObj){
+  const keys = Object.keys(positionsObj || {}).map(k => k.toLowerCase());
+  const score = { defense: 0, offense: 0, specialTeams: 0 };
+  keys.forEach(k => {
+    if(DEF_POS_KEYS.includes(k)) score.defense++;
+    else if(OFF_POS_KEYS.includes(k)) score.offense++;
+    else if(ST_POS_KEYS.includes(k)) score.specialTeams++;
+  });
+  return Object.entries(score).sort((a,b) => b[1]-a[1])[0][0];
+}
+
+const athleteDetailCache = {};
+async function resolveAthlete(ref){
+  if(athleteDetailCache[ref]) return athleteDetailCache[ref];
+  try{
+    const a = await fetch(ref.replace('http://','https://')).then(r => r.json());
+    athleteDetailCache[ref] = a;
+    return a;
+  }catch(e){ return null; }
+}
+
+async function fetchDepthChartEspn(abbr, year){
+  const teamId = ESPN_TEAM_ID[abbr];
+  if(!teamId) return null;
+  const listUrl = `https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/${year}/teams/${teamId}/depthcharts`;
+  const list = await fetch(listUrl).then(r => r.json());
+  if(!list.items || !list.items.length) return null;
+
+  const crosswalk = await loadEspnIdCrosswalk();
+  const groups = { defense: [], offense: [], specialTeams: [] };
+
+  for(const item of list.items){
+    const formation = item.$ref ? await fetch(item.$ref.replace('http://','https://')).then(r=>r.json()) : item;
+    const bucket = classifyFormation(formation.positions);
+
+    const positionGroups = await Promise.all(Object.entries(formation.positions || {}).map(async ([posKey, posData]) => {
+      // ESPN packt mehrere gleichnamige Spots (z.B. 3 Wide-Receiver-Positionen) unter
+      // EINEM Positions-Key zusammen und unterscheidet sie nur über "slot" innerhalb
+      // der athletes-Liste. Ohne Gruppierung nach slot landen alle WR-Reihen in einem
+      // einzigen Array und slice(0,4) zeigt dann nur die Tiefe des ERSTEN Slots (WR1) —
+      // WR2/WR3 gehen komplett verloren. Deshalb hier zuerst nach slot gruppieren.
+      const bySlot = new Map();
+      (posData.athletes || []).forEach(a => {
+        const slot = a.slot ?? 0;
+        if(!bySlot.has(slot)) bySlot.set(slot, []);
+        bySlot.get(slot).push(a);
+      });
+      const slotGroups = Array.from(bySlot.values())
+        .map(list => list.slice().sort((x,y) => (x.rank??99)-(y.rank??99)))
+        .sort((a,b) => (a[0]?.rank??99)-(b[0]?.rank??99));
+
+      const baseAbbr = posData.position?.abbreviation || posKey.toUpperCase();
+      const multi = slotGroups.length > 1;
+
+      return Promise.all(slotGroups.map(async (slotList, idx) => {
+        const athletes = (await Promise.all(slotList.slice(0,4).map(async a => {
+          if(!a.athlete || !a.athlete.$ref) return null;
+          const detail = await resolveAthlete(a.athlete.$ref);
+          if(!detail) return null;
+          const sleeperId = crosswalk[String(detail.id)];
+          return { rank: a.rank ?? a.slot, name: `${detail.firstName} ${detail.lastName}`, sleeperId };
+        }))).filter(Boolean).sort((x,y) => (x.rank??9)-(y.rank??9));
+        return {
+          name: multi ? `${baseAbbr}${idx+1}` : baseAbbr,
+          athletes
+        };
+      }));
+    }));
+
+    groups[bucket].push(...positionGroups.flat().filter(p => p.athletes.length));
+  }
+  return groups;
+}
+
+// ─── OURLADS ARCHIV — für vergangene Seasons (Depth Chart + Coaching Staff) ─
+// WICHTIG: Der Datums→ID-Mechanismus wurde am 06.07. live im DevTools-Inspector
+// verifiziert (echtes <select id="...ddlArchive"> mit value="ID" pro Datum, z.B.
+// value="275" = "09/01/2023", value="304" = "12/01/2025" — 1:1 identisch mit den
+// URLs, die beim Auswählen entstehen). Das ist ein serverseitig gerendertes
+// ASP.NET-<select>, die Optionen stehen also auch im rohen HTML unseres Worker-
+// Fetches, ganz ohne JS-Ausführung. Die eigentlichen Bugs lagen nie hier, sondern
+// in: (1) falscher Tabellen-Auswahl bei mehreren <table> auf der Seite, (2) dem
+// Namens-Parsing bei Trade/Waiver-Tags, (3) IR-Spielern, die ins falsche Bucket
+// liefen — alle drei bereits gefixt, siehe Kommentare unten.
+const OURLADS_ABBR = { ARI: 'ARZ', LAR: 'RAM' };
+function ourladsAbbr(abbr){ return OURLADS_ABBR[abbr] || abbr; }
+
+// Ourlads-Daten sind US-Format MM/DD/YYYY (Monat zuerst!).
+function parseUsDate(s){
+  const m = (s||'').match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  return m ? new Date(parseInt(m[3]), parseInt(m[1])-1, parseInt(m[2])) : null;
+}
+
+async function getOurladsArchiveEntries(oAbbr){
+  const html = await fetchViaWorker(`https://www.ourlads.com/nfldepthcharts/depthchart/${oAbbr}`);
+  if(!html){ console.warn('[Ourlads] Hauptseite konnte nicht geladen werden für', oAbbr); return []; }
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const options = Array.from(doc.querySelectorAll('option'));
+  const entries = options.map(o => {
+    const id = (o.getAttribute('value')||'').match(/^\d+$/) ? o.getAttribute('value') : null;
+    const d = parseUsDate(o.textContent.trim());
+    return (id && d) ? { id, date: o.textContent.trim(), parsed: d } : null;
+  }).filter(Boolean);
+  if(!entries.length) console.warn('[Ourlads] Keine Archiv-Optionen gefunden für', oAbbr);
+  return entries;
+}
+
+function pickOurladsEntry(entries, seasonYear){
+  // Das Liga-Jahr wechselt im März. Der "Abschluss-Stand" einer Season (z.B. 2024)
+  // ist deshalb der Snapshot vom 1. März des FOLGEJAHRS (hier: 03/01/2025) — kurz
+  // bevor Free Agency & Co. der nächsten Season starten. Es muss keinen Eintrag
+  // exakt an diesem Datum geben; wir nehmen den zeitlich nächstgelegenen. Bei
+  // Gleichstand gewinnt der Termin VOR dem Zieldatum.
+  if(!entries.length) return null;
+  const target = new Date(seasonYear+1, 2, 1);
+  const MAX_DIFF_MS = 45 * 24 * 60 * 60 * 1000;
+  let best = null, bestDiff = Infinity;
+  for(const e of entries){
+    const diff = Math.abs(e.parsed - target);
+    if(diff < bestDiff || (diff === bestDiff && e.parsed <= target && (!best || best.parsed > target))){
+      best = e; bestDiff = diff;
+    }
+  }
+  if(!best || bestDiff > MAX_DIFF_MS) return null;
+  return best;
+}
+
+// Format meist "Nachname[ Zusatz], Vorname DRAFT-INFO" (z.B. "Cook III, James 22/2").
+// Bei Trade/Waiver/UFA-Spielern steht statt der Draft-Info ein Transaktions-Tag wie
+// "T/Min", "W/Jax" (Team-Kürzel enthält Kleinbuchstaben!). Beide Zusatz-Varianten
+// enthalten aber immer einen "/" — der zuverlässige Marker zum Abschneiden.
+function cleanOurladsName(raw){
+  const parts = (raw||'').trim().split(',');
+  if(parts.length < 2) return (raw||'').trim();
+  const last = parts[0].trim();
+  const tokens = parts.slice(1).join(',').trim().split(/\s+/);
+  if(tokens.length > 1 && tokens[tokens.length-1].includes('/')) tokens.pop();
+  return `${tokens.join(' ')} ${last}`.trim();
+}
+
+function parseOurladsDepthChartHtml(html){
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const SECTION_MAP = { offense: 'offense', defense: 'defense', 'special teams': 'specialTeams' };
+
+  // Die Seite enthält MEHRERE <table>-Elemente (u.a. reine Layout-Tabellen) — gezielt
+  // die Tabelle mit einer erkennbaren Sektions-Überschrift (Offense/Defense/Special
+  // Teams) suchen, statt blind die erste Tabelle im Dokument zu nehmen.
+  const tables = Array.from(doc.querySelectorAll('table'));
+  const table = tables.find(t => Array.from(t.querySelectorAll('tr')).some(tr => {
+    const nonEmpty = Array.from(tr.children).map(td => td.textContent.trim()).filter(c => c);
+    return nonEmpty.length === 1 && SECTION_MAP[nonEmpty[0].toLowerCase()];
+  }));
+  if(!table) return null;
+
+  const groups = { defense: [], offense: [], specialTeams: [] };
+  let currentBucket = null;
+
+  Array.from(table.querySelectorAll('tr')).forEach(tr => {
+    const cells = Array.from(tr.children).map(td => td.textContent.trim());
+    const nonEmpty = cells.filter(c => c);
+    if(nonEmpty.length === 1){
+      // Bei unbekannten Sektionen (z.B. "Reserves") currentBucket auf null setzen,
+      // sonst landen IR-Spieler fälschlich im vorherigen Bucket.
+      currentBucket = SECTION_MAP[nonEmpty[0].toLowerCase()] || null;
+      return;
+    }
+    if(!currentBucket) return;
+    const posAbbr = cells[0];
+    if(!posAbbr || ['off','def','st','res'].includes(posAbbr.toLowerCase())) return;
+    const athletes = [];
+    for(let i=2, rank=1; i<cells.length; i+=2, rank++){
+      const name = cells[i];
+      if(name) athletes.push({ rank, name: cleanOurladsName(name), sleeperId: null });
+    }
+    if(athletes.length) groups[currentBucket].push({ name: posAbbr, athletes });
+  });
+  return (groups.defense.length || groups.offense.length || groups.specialTeams.length) ? groups : null;
+}
+
+async function fetchDepthChartOurlads(abbr, year){
+  const oAbbr = ourladsAbbr(abbr);
+  const entries = await getOurladsArchiveEntries(oAbbr);
+  if(!entries.length){ console.warn('[Ourlads] Keine Archiv-Einträge gefunden'); return null; }
+  const pick = pickOurladsEntry(entries, year);
+  if(!pick){ console.warn('[Ourlads] Kein Snapshot nahe Season-Ende', year, 'gefunden'); return null; }
+  console.info('[Ourlads] Gewählter Snapshot:', pick.date, '(ID', pick.id + ')');
+  const html = await fetchViaWorker(`https://www.ourlads.com/nfldepthcharts/archive/${pick.id}/${oAbbr}`);
+  if(!html){ console.warn('[Ourlads] Archiv-Seite konnte nicht geladen werden, ID', pick.id); return null; }
+  const groups = parseOurladsDepthChartHtml(html);
+  if(!groups) console.warn('[Ourlads] Tabelle konnte nicht geparst werden, HTML-Länge:', html.length);
+  if(groups) groups._sourceDate = pick.date;
+  return groups;
+}
+
+// ─── COACHING STAFF (GM/HC/OC/DC/STC) — steht als kurzer Textblock auf derselben
+// Ourlads-Seite (live UND Archiv), z.B. "HC: Name  OC: Name  DC: Name  STC: Name".
+function cleanCoachName(raw){
+  const words = raw.trim().split(/\s+/);
+  const suffix = /^(Jr\.?|Sr\.?|II|III|IV)$/i;
+  if(words.length > 2 && suffix.test(words[2])) return words.slice(0,3).join(' ');
+  return words.slice(0,2).join(' ');
+}
+
+function parseOurladsCoachingStaff(html){
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const bodyText = (doc.body ? doc.body.textContent : '').replace(/\s+/g, ' ');
+  const idx = bodyText.indexOf('Archive (') !== -1 ? bodyText.indexOf('Archive (') : bodyText.indexOf('Coaching Staff');
+  const scoped = idx === -1 ? bodyText : bodyText.slice(idx, idx + 300);
+  const out = {};
+  const LABELS = 'GM|HC|OC|DC|STC|ST';
+  const re = new RegExp(`\\b(${LABELS})\\s*:\\s*([^:]+?)(?=\\s*\\b(?:${LABELS})\\s*:|$)`, 'g');
+  let m;
+  while((m = re.exec(scoped))){
+    if(!out[m[1]]) out[m[1]] = cleanCoachName(m[2]);
+  }
+  return out;
+}
+
+async function fetchOurladsCoachingStaff(abbr, year){
+  const oAbbr = ourladsAbbr(abbr);
+  let html;
+  if(year === CURRENT_SEASON_YEAR){
+    html = await fetchViaWorker(`https://www.ourlads.com/nfldepthcharts/depthchart/${oAbbr}`);
+  } else {
+    const entries = await getOurladsArchiveEntries(oAbbr);
+    const pick = entries.length ? pickOurladsEntry(entries, year) : null;
+    if(!pick) return null;
+    html = await fetchViaWorker(`https://www.ourlads.com/nfldepthcharts/archive/${pick.id}/${oAbbr}`);
+  }
+  if(!html) return null;
+  const staff = parseOurladsCoachingStaff(html);
+  return Object.keys(staff).length ? staff : null;
+}
+
+// ─── POSITIONS-GLOSSAR ──────────────────────────────────────────────────
+const POSITION_GLOSSARY = {
+  QB:'Quarterback', RB:'Running Back', FB:'Fullback', WR:'Wide Receiver', TE:'Tight End',
+  LT:'Left Tackle', LG:'Left Guard', C:'Center', RG:'Right Guard', RT:'Right Tackle', OL:'Offensive Line',
+  LDE:'Left Defensive End', RDE:'Right Defensive End', LDT:'Left Defensive Tackle', RDT:'Right Defensive Tackle',
+  NT:'Nose Tackle', DT:'Defensive Tackle', DE:'Defensive End',
+  WLB:'Weakside Linebacker', MLB:'Middle Linebacker', SLB:'Strongside Linebacker',
+  LOLB:'Left Outside Linebacker', ROLB:'Right Outside Linebacker', ILB:'Inside Linebacker', OLB:'Outside Linebacker', LB:'Linebacker',
+  LCB:'Left Cornerback', RCB:'Right Cornerback', CB:'Cornerback', NB:'Nickel Back (3. Cornerback)', DB:'Defensive Back',
+  FS:'Free Safety', SS:'Strong Safety', S:'Safety',
+  PK:'Placekicker', P:'Punter', H:'Holder', LS:'Long Snapper', KR:'Kick Returner', PR:'Punt Returner',
+};
+function renderGlossary(groups){
+  const box = document.getElementById('dc-glossary');
+  const grid = document.getElementById('dc-glossary-grid');
+  const allPositions = new Set();
+  ['defense','offense','specialTeams'].forEach(k => (groups[k]||[]).forEach(p => allPositions.add(p.name.toUpperCase())));
+  const items = Array.from(allPositions).filter(p => POSITION_GLOSSARY[p]).sort();
+  if(!items.length){ box.style.display = 'none'; return; }
+  grid.innerHTML = items.map(p => `<div class="dc-glossary-item"><b>${p}</b>${POSITION_GLOSSARY[p]}</div>`).join('');
+  box.style.display = 'block';
+}
+
+function renderDepthChartSection(key, label, positions){
+  if(!positions || !positions.length) return '';
+  const maxDepth = Math.max(...positions.map(p => p.athletes.length), 1);
+  const headCols = ['STARTER','2ND','3RD','4TH','5TH'].slice(0, maxDepth);
+  const rows = positions.map(p => {
+    const cells = headCols.map((_, i) => {
+      const a = p.athletes[i];
+      if(!a) return `<td class="dc-player-cell empty">–</td>`;
+      return `<td class="dc-player-cell">${a.sleeperId ? `<a href="player.html?id=${a.sleeperId}">${a.name}</a>` : a.name}</td>`;
+    }).join('');
+    return `<tr><td class="dc-pos-cell">${p.name}</td>${cells}</tr>`;
+  }).join('');
+  return `<div class="dc-section" data-key="${key}">
+    <div class="dc-section-hdr">
+      <div class="dc-section-title">${label}<span class="dc-badge">${positions.length} Positionen</span></div>
+      <span class="dc-chevron">▾</span>
+    </div>
+    <div class="dc-section-body">
+      <table class="dc-table">
+        <thead><tr><th>Pos</th>${headCols.map(h=>`<th>${h}</th>`).join('')}</tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  </div>`;
+}
+
+async function renderDepthChart(abbr, year){
+  const statusEl = document.getElementById('dc-status');
+  const container = document.getElementById('dc-container');
+  const badge = document.getElementById('dc-source-badge');
+  const subline = document.getElementById('dc-subline');
+  statusEl.style.display = 'block';
+  statusEl.textContent = 'Lade Depth Chart…';
+  container.innerHTML = '';
+  badge.textContent = '';
+  subline.textContent = '';
+  document.getElementById('dc-glossary').style.display = 'none';
+
+  const isCurrent = year === CURRENT_SEASON_YEAR;
+  try{
+    // ESPN für aktuelle Season (bestätigt zuverlässig, live), Ourlads-Archiv für
+    // vergangene Seasons — der Datums→ID-Mechanismus wurde am 06.07. per DevTools-
+    // Inspector verifiziert (echtes <select> mit value="ID" pro Datum, siehe Chat).
+    const groups = isCurrent ? await fetchDepthChartEspn(abbr, year) : await fetchDepthChartOurlads(abbr, year);
+    if(!groups){ statusEl.textContent = 'Für diese Season liegt keine Depth Chart vor.'; return; }
+
+    badge.textContent = isCurrent ? 'Live · ESPN' : 'Archiv · Ourlads.com';
+    subline.textContent = isCurrent
+      ? `Stand: aktuelle Season ${year}`
+      : `Snapshot vom ${groups._sourceDate || '–'} (Ourlads-Archiv)`;
+
+    // Reihenfolge fest: Defense, Offense, Special Teams
+    const html = [
+      renderDepthChartSection('defense', 'Defense', groups.defense),
+      renderDepthChartSection('offense', 'Offense', groups.offense),
+      renderDepthChartSection('specialTeams', 'Special Teams', groups.specialTeams),
+    ].join('');
+    if(!html.trim()){ statusEl.textContent = 'Für diese Season liegt keine Depth Chart vor.'; return; }
+    statusEl.style.display = 'none';
+    container.innerHTML = html;
+    container.querySelectorAll('.dc-section-hdr').forEach(hdr => {
+      hdr.addEventListener('click', () => hdr.closest('.dc-section').classList.toggle('open'));
+    });
+    const first = container.querySelector('.dc-section');
+    if(first) first.classList.add('open');
+    renderGlossary(groups);
+  }catch(e){
+    console.warn('Depth Chart konnte nicht geladen werden:', e);
+    statusEl.textContent = 'Depth Chart konnte nicht geladen werden.';
+  }
+}
+
+function formatGameDate(iso){
+  try{ return new Date(iso).toLocaleDateString('de-DE', {day:'2-digit', month:'2-digit'}); }
+  catch(e){ return '–'; }
+}
+
+function renderScheduleTable(games){
+  if(!games || !games.length) return '<div class="dc-empty">Kein Schedule verfügbar.</div>';
+  const rows = games.map(g => {
+    let cls = 'upcoming', txt = '–';
+    if(g.completed && g.myScore != null && g.oppScore != null){
+      if(g.myScore > g.oppScore){ cls='win'; txt = `W ${g.myScore}-${g.oppScore}`; }
+      else if(g.myScore < g.oppScore){ cls='loss'; txt = `L ${g.myScore}-${g.oppScore}`; }
+      else { cls='tie'; txt = `T ${g.myScore}-${g.oppScore}`; }
+    }
+    return `<tr class="${cls}">
+      <td>${formatGameDate(g.date)}</td>
+      <td class="sched-opp"><img class="sched-team-logo" src="${logoUrl(g.opp)}" alt="" onerror="this.style.visibility='hidden'">${g.isHome?'vs':'@'} ${g.opp}</td>
+      <td class="sched-result">${txt}</td>
+    </tr>`;
+  }).join('');
+  return `<table class="sched-table"><thead><tr><th>Datum</th><th>Gegner</th><th>Ergebnis</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+function formatRecord(r){
+  if(r.wins != null && r.losses != null) return `${r.wins}-${r.losses}${(r.ties && parseFloat(r.ties) > 0) ? ('-'+r.ties) : ''}`;
+  return r.summary || '–';
+}
+
+function renderStandingsTable(rows, myAbbr){
+  if(!rows || !rows.length) return '<div class="dc-empty">Keine Standings verfügbar.</div>';
+  const sorted = rows.slice().sort((a,b) => (parseFloat(b.wins)||0) - (parseFloat(a.wins)||0));
+  const body = sorted.map(r => `<tr class="${r.abbr===myAbbr?'me-row':''}"><td>${r.abbr}</td><td>${formatRecord(r)}</td></tr>`).join('');
+  return `<table class="standings-table"><thead><tr><th>Team</th><th>Rec.</th></tr></thead><tbody>${body}</tbody></table>`;
+}
+
+function renderDivisionRanking(abbr, team, divRows){
+  const title = document.getElementById('divrank-title');
+  const list = document.getElementById('divrank-list');
+  title.textContent = `${team.conf} ${team.div}`;
+  if(!divRows || !divRows.length){ list.innerHTML = '<div class="divrank-row">–</div>'; return; }
+  const sorted = divRows.slice().sort((a,b) => (parseFloat(b.wins)||0) - (parseFloat(a.wins)||0));
+  list.innerHTML = sorted.map((r,i) => `<div class="divrank-row ${r.abbr===abbr?'me':''}"><span>${i+1}. ${r.abbr}</span><span class="dr-rec">${formatRecord(r)}</span></div>`).join('');
+}
+
+async function renderScheduleStandings(abbr, year){
+  const statusEl = document.getElementById('sched-status');
+  const container = document.getElementById('sched-container');
+  statusEl.style.display = 'block';
+  statusEl.textContent = 'Lade Schedule & Standings…';
+  container.innerHTML = '';
+
+  const team = TEAMS[abbr];
+  try{
+    const [games, groups] = await Promise.all([
+      fetchTeamSchedule(abbr, year),
+      discoverStandingsGroups(year)
+    ]);
+
+    const confGroup = findConferenceGroup(groups, team.conf);
+    const divGroup = findDivisionGroup(groups, team.conf, team.div);
+    const otherConf = team.conf === 'AFC' ? 'NFC' : 'AFC';
+    const otherGroup = findConferenceGroup(groups, otherConf);
+
+    const [confRows, divRows, otherRows] = await Promise.all([
+      confGroup ? fetchGroupStandings(year, confGroup.id) : null,
+      divGroup ? fetchGroupStandings(year, divGroup.id) : null,
+      otherGroup ? fetchGroupStandings(year, otherGroup.id) : null
+    ]);
+
+    renderDivisionRanking(abbr, team, divRows);
+
+    const afcRows = team.conf === 'AFC' ? confRows : otherRows;
+    const nfcRows = team.conf === 'NFC' ? confRows : otherRows;
+
+    statusEl.style.display = 'none';
+    container.innerHTML = `
+      <div class="dc-section open" data-key="schedule">
+        <div class="dc-section-hdr"><div class="dc-section-title">Schedule<span class="dc-badge">${games?games.length:0} Spiele</span></div><span class="dc-chevron">▾</span></div>
+        <div class="dc-section-body">${renderScheduleTable(games)}</div>
+      </div>
+      <div class="standings-row">
+        <div class="dc-section open" data-key="afc">
+          <div class="dc-section-hdr"><div class="dc-section-title">AFC Standing</div><span class="dc-chevron">▾</span></div>
+          <div class="dc-section-body">${renderStandingsTable(afcRows, abbr)}</div>
+        </div>
+        <div class="dc-section open" data-key="nfc">
+          <div class="dc-section-hdr"><div class="dc-section-title">NFC Standing</div><span class="dc-chevron">▾</span></div>
+          <div class="dc-section-body">${renderStandingsTable(nfcRows, abbr)}</div>
+        </div>
+      </div>`;
+    container.querySelectorAll('.dc-section-hdr').forEach(hdr => {
+      hdr.addEventListener('click', () => hdr.closest('.dc-section').classList.toggle('open'));
+    });
+  }catch(e){
+    console.warn('Schedule/Standings konnten nicht geladen werden:', e);
+    statusEl.textContent = 'Schedule/Standings konnten nicht geladen werden.';
+  }
+}
+
+const MIN_YEAR = 2022;
+const NOW_YEAR = new Date().getFullYear();
+
+const params = new URLSearchParams(location.search);
+const abbr = (params.get('abbr') || '').toUpperCase();
+const team = TEAMS[abbr];
+
+if(team){
+  document.title = `${team.city} ${team.name} · Mics in Motion`;
+  const header = document.getElementById('team-header');
+  header.style.display = 'flex';
+  header.style.setProperty('--tc-color', team.color);
+  document.getElementById('team-header-logo-bg').src = logoUrl(abbr);
+  document.getElementById('team-hdr-logo').src = logoUrl(abbr);
+  document.getElementById('team-hdr-name').textContent = `${team.city} ${team.name}`;
+  document.getElementById('team-hdr-div').textContent = `${team.conf} ${team.div}`;
+
+  const yearSelect = document.getElementById('season-select');
+  const years = [];
+  for(let y = CURRENT_SEASON_YEAR; y >= MIN_YEAR; y--) years.push(y);
+  yearSelect.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
+
+  async function renderSeason(year){
+    // Coaches: Ourlads liefert HC/OC/DC als kompakten Textblock direkt auf derselben
+    // Seite, die wir eh für die Depth Chart brauchen (siehe fetchOurladsCoachingStaff) —
+    // das ist unsere primäre Quelle für ALLE drei Rollen. ESPN (season-spezifisch,
+    // siehe fetchHeadCoach) dient nur als Fallback für den Head Coach, falls Ourlads
+    // für die jeweilige Season nichts liefert. TEAM_SEASON_DATA bleibt als letzte,
+    // manuell gepflegte Ergänzung bestehen.
+    document.getElementById('staff-hc').textContent = 'Lädt…';
+    document.getElementById('staff-dc').textContent = 'Lädt…';
+    document.getElementById('staff-oc').textContent = 'Lädt…';
+    const manual = getCoachData(abbr, year);
+    Promise.all([fetchOurladsCoachingStaff(abbr, year), fetchHeadCoach(abbr, year)]).then(([ourlads, espnHc]) => {
+      document.getElementById('staff-hc').textContent = (ourlads && ourlads.HC) || espnHc || manual.hc || '–';
+      document.getElementById('staff-dc').textContent = (ourlads && ourlads.DC) || manual.dc || '–';
+      document.getElementById('staff-oc').textContent = (ourlads && ourlads.OC) || manual.oc || '–';
+    });
+
+    // Record (live)
+    document.getElementById('team-hdr-record').innerHTML = `Record: <b>Lädt…</b>`;
+    fetchLiveRecord(abbr, year).then(record => {
+      document.getElementById('team-hdr-record').innerHTML = `Record: <b>${record || '–'}</b>`;
+    });
+
+    // Depth Chart (live)
+    renderDepthChart(abbr, year);
+
+    // Schedule & Standings (live)
+    renderScheduleStandings(abbr, year);
+  }
+  yearSelect.addEventListener('change', () => renderSeason(parseInt(yearSelect.value, 10)));
+  renderSeason(CURRENT_SEASON_YEAR);
+} else {
+  document.getElementById('team-body').innerHTML = `<h3>Team nicht gefunden</h3><p>Bitte über den <a href="team-hub.html" style="color:var(--orange)">Team Hub</a> ein Team auswählen.</p>`;
+}
+</script>
+
+</body>
+</html>

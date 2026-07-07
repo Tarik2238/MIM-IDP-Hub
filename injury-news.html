@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Injury News · Mics in Motion</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#080c10;--bg2:#0d1117;--bg3:#161b22;--border:#21262d;--border2:#30363d;
+--text:#e6edf3;--muted:#7d8590;--orange:#C4722A;--orange-dim:#7a4419;--orange-glow:rgba(196,114,42,.15);--red:#da3633;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;}
+nav{background:rgba(13,17,23,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 32px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.brand{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;color:#fff;text-decoration:none;}
+.brand em{color:var(--orange);font-style:normal;}
+.nav-mid{display:flex;gap:4px;}
+.nav-link{font-size:13px;font-weight:500;color:var(--muted);text-decoration:none;padding:6px 12px;border-radius:6px;transition:all .15s;}
+.nav-link:hover{color:var(--text);background:var(--bg3);}
+
+.page-hdr{padding:28px 32px 20px;border-bottom:1px solid var(--border);background:var(--bg2);}
+.page-title{font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:2px;color:#fff;}
+.page-title span{color:var(--orange);}
+.back-link{font-size:12px;color:var(--muted);text-decoration:none;display:inline-block;margin-top:8px;}
+.back-link:hover{color:var(--orange);}
+
+.content{max-width:900px;margin:0 auto;padding:28px 32px 60px;}
+.search-wrap{margin-bottom:20px;}
+.search-input{width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:8px;padding:12px 16px;color:var(--text);font-size:14px;font-family:'Inter',sans-serif;outline:none;}
+.search-input:focus{border-color:var(--orange);}
+.search-input::placeholder{color:var(--muted);}
+.result-count{font-size:12px;color:var(--muted);margin-bottom:14px;}
+
+.injury-list{display:flex;flex-direction:column;border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.injury-row{display:flex;align-items:flex-start;gap:14px;padding:14px 18px;border-bottom:1px solid var(--border);background:var(--bg2);text-decoration:none;color:inherit;transition:background .15s;}
+.injury-row:last-child{border-bottom:none;}
+.injury-row:hover{background:var(--bg3);}
+.injury-row-date{flex-shrink:0;width:60px;font-size:11px;color:var(--muted);padding-top:2px;text-align:right;}
+.injury-row-body{flex:1;min-width:0;}
+.injury-row-hdr{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;margin-bottom:3px;}
+.injury-row-name{font-weight:700;color:#fff;font-size:14px;}
+.injury-row-pos{font-size:11px;color:var(--muted);}
+.injury-row-status{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--red);background:rgba(218,54,51,.12);border:1px solid rgba(218,54,51,.25);border-radius:4px;padding:1px 6px;}
+.injury-row-text{font-size:13px;color:var(--muted);line-height:1.5;}
+.loading,.empty{color:var(--muted);font-size:13px;text-align:center;padding:60px 0;}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="brand">MICS IN <em>MOTION</em></a>
+  <div class="nav-mid">
+    <a href="index.html" class="nav-link">Home</a>
+    <a href="players.html" class="nav-link">Player DB</a>
+    <a href="team-hub.html" class="nav-link">Team Hub</a>
+    <a href="rankings.html" class="nav-link">IDP Rankings</a>
+    <a href="college-scouting.html" class="nav-link" id="nav-scouting-link" style="display:none;">College Scouting</a>
+  </div>
+</nav>
+
+<script type="module">
+  import { watchAuth } from './firebase-init.js';
+  watchAuth(user => {
+    const link = document.getElementById('nav-scouting-link');
+    if(link) link.style.display = user ? '' : 'none';
+  });
+</script>
+
+<div class="page-hdr">
+  <div class="page-title">INJURY <span>NEWS</span></div>
+  <a class="back-link" href="index.html">← Zurück zur Startseite</a>
+</div>
+
+<div class="content">
+  <div class="search-wrap">
+    <input type="text" class="search-input" id="search-input" placeholder="Spielernamen suchen…">
+  </div>
+  <div class="result-count" id="result-count"></div>
+  <div id="injury-list"><div class="loading">Lade Injury News…</div></div>
+</div>
+
+<script type="module">
+import { loadInjuryFeed } from './injury-feed.js';
+
+let fullFeed = [];
+
+function formatInjuryDate(iso){
+  try{ return new Date(iso).toLocaleDateString('de-DE', {day:'2-digit', month:'2-digit', year:'numeric'}); }
+  catch(e){ return '–'; }
+}
+
+function render(feed){
+  const el = document.getElementById('injury-list');
+  document.getElementById('result-count').textContent = `${feed.length} Eintrag${feed.length!==1?'e':''}`;
+  if(!feed.length){ el.innerHTML = '<div class="empty">Keine Einträge gefunden.</div>'; return; }
+  el.innerHTML = feed.map(item => `
+    <a class="injury-row" href="player.html?id=${item.sleeperId}" target="_blank" rel="noopener">
+      <div class="injury-row-date">${formatInjuryDate(item.date)}</div>
+      <div class="injury-row-body">
+        <div class="injury-row-hdr">
+          <span class="injury-row-name">${item.name}</span>
+          <span class="injury-row-pos">${item.position} · ${item.team}</span>
+          ${item.status ? `<span class="injury-row-status">${item.status}</span>` : ''}
+        </div>
+        <div class="injury-row-text">${item.shortComment || item.longComment || ''}</div>
+      </div>
+    </a>`).join('');
+}
+
+document.getElementById('search-input').addEventListener('input', (e) => {
+  const q = e.target.value.trim().toLowerCase();
+  const filtered = q ? fullFeed.filter(item => item.name.toLowerCase().includes(q)) : fullFeed;
+  render(filtered);
+});
+
+loadInjuryFeed().then(feed => {
+  fullFeed = feed;
+  render(fullFeed);
+}).catch(e => {
+  console.warn('Injury News konnten nicht geladen werden:', e);
+  document.getElementById('injury-list').innerHTML = '<div class="empty">Injury News konnten nicht geladen werden.</div>';
+});
+</script>
+
+</body>
+</html>

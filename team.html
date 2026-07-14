@@ -2004,10 +2004,12 @@ function renderRosterPlayerRow(p, snapInfo, summary){
   const subParts = [p.jersey_number?`#${p.jersey_number}`:'', p.status||''].filter(Boolean).join(' · ');
   const midSeasonTag = snapInfo.joinedMidSeason ? ` · <span class="roster-mid-season-tag">Joined Mid Season</span>` : '';
   const sub = subParts + midSeasonTag;
+  const avgPts = (summary.gp && summary.pts!=null) ? (summary.pts/summary.gp).toFixed(1) : '–';
   const seasonStats = [
     {l:'GP', v:summary.gp}, {l:'Solo', v:summary.solo}, {l:'Ast', v:summary.ast}, {l:'TKL', v:summary.tkl},
     {l:'TFL', v:summary.tfl}, {l:'SK', v:summary.sk}, {l:'QBH', v:summary.qbh}, {l:'PBU', v:summary.pbu},
     {l:'INT', v:summary.int}, {l:'FR', v:summary.fr}, {l:'FF', v:summary.ff}, {l:'SAFE', v:summary.safe}, {l:'TD', v:summary.td},
+    {l:'Avg Pts', v:avgPts},
   ].map(s => `<div class="roster-season-stat"><div class="roster-season-val">${s.v||0}</div><div class="roster-season-lbl">${s.l}</div></div>`).join('');
 
   const headshotUrl = `https://sleepercdn.com/content/nfl/players/${p.sleeper_id}.jpg`;
@@ -2030,7 +2032,7 @@ function renderRosterPlayerRow(p, snapInfo, summary){
       <span class="roster-chevron">▾</span>
     </div>
     <div class="roster-detail">
-      <div class="roster-total-snaps">Total Snaps: <b>${snapInfo.seasonSnaps!=null?snapInfo.seasonSnaps:'–'}</b> &nbsp;·&nbsp; Avg. Points: <b>${(summary.gp && summary.pts!=null)?(summary.pts/summary.gp).toFixed(1):'–'}</b></div>
+      <div class="roster-total-snaps">Total Snaps: <b>${snapInfo.seasonSnaps!=null?snapInfo.seasonSnaps:'–'}</b></div>
       ${renderSnapChart(snapInfo.byWeek)}
       <div class="roster-season-grid">${seasonStats}</div>
       <a class="roster-profile-link" href="player.html?id=${p.sleeper_id}">Spielerprofil öffnen →</a>
@@ -2266,6 +2268,7 @@ async function renderRoster(abbr, year){
     // Auf IDP-relevante Spieler filtern + Gruppe zuordnen
     const grouped = { DI: [], ED: [], LB: [], CB: [], S: [] };
     let freshIdUsed = 0;
+    const droppedPlayers = []; // Spieler, die in KEINEM der 5 Buckets landen (weder PFF noch Fallback)
     rosterRows.forEach(p => {
       const { pffMap, rawPlayers } = pffByTeam[p.currentTeam] || { pffMap: new Map(), rawPlayers: [] };
       // pff_id BEVORZUGT aus der aktuellen Saison auflösen (wie player.html es via
@@ -2305,9 +2308,16 @@ async function renderRoster(abbr, year){
         // im Spielerprofil (siehe Chat).
         console.info(`[Roster] Fallback für ${p.full_name}: mehrjährig aufgelöste Gruppe = ${resolvedFallbackGroup||'(keine)'}, einzelne Jahres-Zeile (depth_chart_position="${p.depth_chart_position}", position="${p.position}") → finale Gruppe = ${finalGroup}`);
       }
-      if(finalGroup) grouped[finalGroup].push(p);
+      if(finalGroup){
+        grouped[finalGroup].push(p);
+      } else {
+        droppedPlayers.push({ name: p.full_name, sleeper_id: p.sleeper_id, dcp: p.depth_chart_position, pos: p.position, status: p.status });
+      }
     });
     if(freshIdUsed) console.log(`[Roster] ${freshIdUsed} Spieler mit pff_id aus aktueller Saison statt Jahres-Snapshot aufgelöst`);
+    if(droppedPlayers.length){
+      console.warn(`[Roster] ⚠️ ${droppedPlayers.length} Spieler bei ${abbr} ${year} fallen aus ALLEN 5 Positions-Spalten raus (weder PFF noch Fallback konnte eine Position zuordnen) und fehlen daher komplett in der Anzeige:`, droppedPlayers);
+    }
 
     // Sleeper Weekly Stats für ALLE IDP-Spieler dieses Teams parallel laden — daraus
     // ergeben sich sowohl die Season Stats als auch summary.pts (Fantasy Points) für
@@ -2995,7 +3005,8 @@ if(team){
 
 <footer style="text-align:center;padding:20px;font-size:11px;color:var(--muted);border-top:1px solid var(--border);letter-spacing:1px;">
   <div id="footer-text">MICS IN MOTION · IDP HUB</div>
-  <div class="footer-disclaimer" style="margin-top:6px;font-size:10px;letter-spacing:.3px;color:var(--muted);opacity:.75;">Diese Daten sind für den fairen, internen Community-Gebrauch gedacht — bitte nicht automatisiert im großen Stil abgreifen oder außerhalb der Community weiterverbreiten.</div>
+  <div class="footer-disclaimer" style="margin-top:6px;font-size:10px;letter-spacing:.3px;color:var(--muted);opacity:.75;">Diese Daten sind für unsere Community gedacht — bitte geht respektvoll und fair damit um.</div>
+  <div style="margin-top:4px;font-size:10px;color:var(--muted);opacity:.6;">© 2026 Mics in Motion. Alle Rechte vorbehalten.</div>
 </footer>
 </body>
 </html>

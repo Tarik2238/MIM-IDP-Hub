@@ -222,6 +222,10 @@ nav{background:rgba(13,17,23,.97);backdrop-filter:blur(12px);border-bottom:1px s
 .roster-row-stats{display:flex;gap:12px;flex-shrink:0;}
 .roster-stat{display:flex;flex-direction:column;align-items:flex-end;min-width:32px;}
 .roster-stat-val{font-size:13px;font-weight:700;color:var(--orange);}
+.trend-arrow{font-size:10px;margin-right:3px;display:inline-block;}
+.trend-up{color:#3fb950;}
+.trend-down{color:#da3633;}
+.trend-flat{color:#fff;}
 .roster-stat-lbl{font-size:8px;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;}
 .roster-chevron{color:var(--muted);font-size:11px;transition:transform .2s;flex-shrink:0;}
 .roster-row.open .roster-chevron{transform:rotate(180deg);}
@@ -2038,11 +2042,36 @@ function renderSnapChart(byWeek){
     <div class="roster-snap-wk-row">${labels.join('')}</div>`;
 }
 
-function renderRosterPlayerRow(p, snapInfo, summary){
+// Trend-Pfeile für Avg. Pts (Jahresvergleich) und Snap% (Woche-zu-Woche) — siehe
+// Chat. Grün/Auf ab +Schwelle, Rot/Ab ab -Schwelle, sonst neutrales weißes "–".
+function trendArrowHtml(diff, threshold){
+  if(diff == null || isNaN(diff)) return `<span class="trend-arrow trend-flat">–</span>`;
+  if(diff >= threshold) return `<span class="trend-arrow trend-up">▲</span>`;
+  if(diff <= -threshold) return `<span class="trend-arrow trend-down">▼</span>`;
+  return `<span class="trend-arrow trend-flat">–</span>`;
+}
+// Letzte vs. vorletzte Woche mit tatsächlichem Snap%-Wert (nicht einfach die
+// letzten zwei Einträge — falls eine Woche fehlt/0 Snaps hat, wird sie übersprungen).
+function computeSnapTrend(byWeek){
+  if(!byWeek || !byWeek.size) return null;
+  const weeksSorted = [...byWeek.entries()].sort((a,b) => a[0]-b[0]).filter(([,w]) => w.pct != null);
+  if(weeksSorted.length < 2) return null;
+  const last = weeksSorted[weeksSorted.length-1][1].pct;
+  const prev = weeksSorted[weeksSorted.length-2][1].pct;
+  return last - prev;
+}
+
+function renderRosterPlayerRow(p, snapInfo, summary, prevSummary){
   const subParts = [p.jersey_number?`#${p.jersey_number}`:'', p.status||''].filter(Boolean).join(' · ');
   const midSeasonTag = snapInfo.joinedMidSeason ? ` · <span class="roster-mid-season-tag">Joined Mid Season</span>` : '';
   const sub = subParts + midSeasonTag;
-  const avgPts = (summary.gp && summary.pts!=null) ? (summary.pts/summary.gp).toFixed(1) : '–';
+  const avgPtsNum = (summary.gp && summary.pts!=null) ? (summary.pts/summary.gp) : null;
+  const avgPts = avgPtsNum!=null ? avgPtsNum.toFixed(1) : '–';
+  const prevAvgPtsNum = (prevSummary && prevSummary.gp && prevSummary.pts!=null) ? (prevSummary.pts/prevSummary.gp) : null;
+  const avgPtsDiff = (avgPtsNum!=null && prevAvgPtsNum!=null) ? (avgPtsNum - prevAvgPtsNum) : null;
+  const avgPtsTrendHtml = trendArrowHtml(avgPtsDiff, 0.2);
+  const snapTrendDiff = computeSnapTrend(snapInfo.byWeek);
+  const snapTrendHtml = trendArrowHtml(snapTrendDiff, 5);
   const seasonStats = [
     {l:'GP', v:summary.gp}, {l:'Solo', v:summary.solo}, {l:'Ast', v:summary.ast}, {l:'TKL', v:summary.tkl},
     {l:'TFL', v:summary.tfl}, {l:'SK', v:summary.sk}, {l:'QBH', v:summary.qbh}, {l:'PBU', v:summary.pbu},
@@ -2064,8 +2093,8 @@ function renderRosterPlayerRow(p, snapInfo, summary){
         <div class="roster-row-sub">${sub||'&nbsp;'}</div>
       </div>
       <div class="roster-row-stats">
-        <div class="roster-stat"><div class="roster-stat-val">${summary.pts?summary.pts.toFixed(1):'–'}</div><div class="roster-stat-lbl">Pts</div></div>
-        <div class="roster-stat"><div class="roster-stat-val">${snapInfo.seasonPct!=null?snapInfo.seasonPct+'%':'–'}</div><div class="roster-stat-lbl">Snp%</div></div>
+        <div class="roster-stat"><div class="roster-stat-val">${avgPtsTrendHtml}${summary.pts?summary.pts.toFixed(1):'–'}</div><div class="roster-stat-lbl">Pts</div></div>
+        <div class="roster-stat"><div class="roster-stat-val">${snapTrendHtml}${snapInfo.seasonPct!=null?snapInfo.seasonPct+'%':'–'}</div><div class="roster-stat-lbl">Snp%</div></div>
       </div>
       <span class="roster-chevron">▾</span>
     </div>
@@ -2116,7 +2145,7 @@ function loadRosterCache(abbr, year){
     if(!raw) return null;
     const parsed = JSON.parse(raw);
     if(!parsed.ts || Date.now()-parsed.ts > ROSTER_CACHE_TTL) return null;
-    return { grouped: parsed.grouped, statsById: parsed.statsById, snapData: deserializeSnapData(parsed.snapData) };
+    return { grouped: parsed.grouped, statsById: parsed.statsById, snapData: deserializeSnapData(parsed.snapData), prevStatsById: parsed.prevStatsById || {} };
   }catch(e){ return null; }
 }
 // Entfernt ABGELAUFENE Roster-Cache-Einträge (andere Team+Jahr-Kombinationen, die
@@ -2139,13 +2168,13 @@ function cleanupExpiredRosterCaches(){
   if(toRemove.length) console.log(`[Roster] ${toRemove.length} abgelaufene Cache-Einträge aufgeräumt.`);
 }
 
-function saveRosterCacheLocal(abbr, year, grouped, statsById, snapData){
+function saveRosterCacheLocal(abbr, year, grouped, statsById, snapData, prevStatsById){
   cleanupExpiredRosterCaches();
   const pfrIds = Object.values(grouped).flat().map(p => p.pfr_id).filter(Boolean);
   const trimmed = trimSnapDataForCache(snapData, abbr, pfrIds);
   const serializedSnapData = serializeSnapData(trimmed);
   const payload = JSON.stringify({
-    ts: Date.now(), grouped, statsById, snapData: serializedSnapData,
+    ts: Date.now(), grouped, statsById, snapData: serializedSnapData, prevStatsById: prevStatsById || {},
   });
   try{
     localStorage.setItem(rosterCacheKey(abbr, year), payload);
@@ -2164,24 +2193,25 @@ function saveRosterCacheLocal(abbr, year, grouped, statsById, snapData){
   return serializedSnapData;
 }
 
-function saveRosterCache(abbr, year, grouped, statsById, snapData){
-  const serializedSnapData = saveRosterCacheLocal(abbr, year, grouped, statsById, snapData);
+function saveRosterCache(abbr, year, grouped, statsById, snapData, prevStatsById){
+  const serializedSnapData = saveRosterCacheLocal(abbr, year, grouped, statsById, snapData, prevStatsById);
   // GETEILT (Firestore): der nächste Besucher — egal welcher Browser — bekommt
   // dieses Team+Jahr dann sofort, ohne selbst neu zu rechnen (siehe Chat).
-  saveSharedCache(`roster_${abbr}_${year}`, { grouped, statsById, snapData: serializedSnapData })
+  saveSharedCache(`roster_${abbr}_${year}`, { grouped, statsById, snapData: serializedSnapData, prevStatsById: prevStatsById || {} })
     .then(ok => { if(ok) console.log(`[Roster] Geteilter Cache (Firestore) für ${abbr} ${year} geschrieben.`); });
 }
 
 // Baut die eigentliche HTML-Ausgabe (5 Positions-Spalten + Toggle-Logik) — von
 // BEIDEN Pfaden genutzt (Cache-Treffer UND frischer Fetch), damit es nur eine
 // Stelle für die Sortier-/Render-Logik gibt.
-function renderRosterSections(container, grouped, statsById, snapData, abbr){
+function renderRosterSections(container, grouped, statsById, snapData, abbr, prevStatsById){
   const GROUP_LABELS = { DI:'DI', ED:'ED', LB:'LB', CB:'CB', S:'S' };
   const sectionsHtml = Object.entries(GROUP_LABELS).map(([key,label]) => {
     const players = grouped[key].map(p => {
       const summary = seasonSummaryFromWeeks(statsById[p.sleeper_id] || {});
+      const prevSummary = seasonSummaryFromWeeks((prevStatsById && prevStatsById[p.sleeper_id]) || {});
       const snapInfo = computeSeasonSnaps(p.pfr_id, abbr, snapData);
-      return { p, summary, snapInfo };
+      return { p, summary, prevSummary, snapInfo };
     }).sort((a,b) => {
       // Primär nach Snap% absteigend (fehlende Werte ans Ende), danach alphabetisch
       const pa = a.snapInfo.seasonPct, pb = b.snapInfo.seasonPct;
@@ -2192,7 +2222,7 @@ function renderRosterSections(container, grouped, statsById, snapData, abbr){
       return a.p.full_name.localeCompare(b.p.full_name, 'de', {sensitivity:'base'});
     });
 
-    const rows = players.map(({p,summary,snapInfo}) => renderRosterPlayerRow(p, snapInfo, summary)).join('');
+    const rows = players.map(({p,summary,prevSummary,snapInfo}) => renderRosterPlayerRow(p, snapInfo, summary, prevSummary)).join('');
     return `<div class="dc-section roster-section" data-key="${key}">
       <div class="dc-section-hdr">
         <div class="dc-section-title">${label}<span class="dc-badge">${players.length}</span></div>
@@ -2241,7 +2271,7 @@ async function renderRoster(abbr, year){
     console.log('[Roster] CACHE-TREFFER (lokal) — kein Fetch nötig.');
     statusEl.style.display = 'none';
     subline.textContent = `Kader ${year} · sortiert nach Snap% (dann A–Z)`;
-    renderRosterSections(container, cached.grouped, cached.statsById, cached.snapData, abbr);
+    renderRosterSections(container, cached.grouped, cached.statsById, cached.snapData, abbr, cached.prevStatsById);
     return;
   }
 
@@ -2258,10 +2288,10 @@ async function renderRoster(abbr, year){
     console.timeEnd(`[Roster] Gesamtdauer ${abbr} ${year}`);
     console.log('[Roster] GETEILTER CACHE-TREFFER (Firestore) — kein Fetch nötig.');
     const snapData = deserializeSnapData(shared.snapData);
-    saveRosterCacheLocal(abbr, year, shared.grouped, shared.statsById, snapData); // nur lokal, nicht wieder zu Firestore zurückschreiben
+    saveRosterCacheLocal(abbr, year, shared.grouped, shared.statsById, snapData, shared.prevStatsById); // nur lokal, nicht wieder zu Firestore zurückschreiben
     statusEl.style.display = 'none';
     subline.textContent = `Kader ${year} · sortiert nach Snap% (dann A–Z)`;
-    renderRosterSections(container, shared.grouped, shared.statsById, snapData, abbr);
+    renderRosterSections(container, shared.grouped, shared.statsById, snapData, abbr, shared.prevStatsById);
     return;
   }
 
@@ -2486,11 +2516,19 @@ async function renderRoster(abbr, year){
     // ergeben sich sowohl die Season Stats als auch summary.pts (Fantasy Points) für
     // GENAU das ausgewählte Jahr. Kein separater Zusatz-Fetch nötig, da die Punkte
     // schon aus diesen Weekly-Daten berechnet werden (siehe seasonSummaryFromWeeks).
+    // ZUSÄTZLICH: Vorjahres-Stats für den Avg.-Pts-Jahresvergleich (Trend-Pfeil,
+    // siehe Chat) — separater Fetch, da wir dafür ein komplett anderes Jahr brauchen.
     const allIdp = Object.values(grouped).flat();
     statusEl.textContent = `Lade Stats für ${allIdp.length} Spieler…`;
     const statsById = {};
+    const prevYearStatsById = {};
     await Promise.all(allIdp.map(async p => {
-      statsById[p.sleeper_id] = await fetchPlayerWeeklyStats(p.sleeper_id, year);
+      const [cur, prev] = await Promise.all([
+        fetchPlayerWeeklyStats(p.sleeper_id, year),
+        fetchPlayerWeeklyStats(p.sleeper_id, year - 1),
+      ]);
+      statsById[p.sleeper_id] = cur;
+      prevYearStatsById[p.sleeper_id] = prev;
     }));
 
     // WICHTIG: Falls der Nutzer zwischenzeitlich das Jahr gewechselt hat, ist diese
@@ -2500,8 +2538,8 @@ async function renderRoster(abbr, year){
     subline.textContent = `Kader ${year} · sortiert nach Snap% (dann A–Z)`;
 
     statusEl.style.display = 'none';
-    renderRosterSections(container, grouped, statsById, snapData, abbr);
-    saveRosterCache(abbr, year, grouped, statsById, snapData);
+    renderRosterSections(container, grouped, statsById, snapData, abbr, prevYearStatsById);
+    saveRosterCache(abbr, year, grouped, statsById, snapData, prevYearStatsById);
     console.timeEnd(`[Roster] Gesamtdauer ${abbr} ${year}`);
   }catch(e){
     console.warn('Team Roster konnte nicht geladen werden:', e);

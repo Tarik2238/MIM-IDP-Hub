@@ -2254,6 +2254,60 @@ async function renderRoster(abbr, year){
     console.log('[Roster] Spieler mit erkanntem Injury-Status auf diesem Roster:',
       rosterRows.filter(p => p.injury).map(p => `${p.full_name}: "${p.injury}" (gsis_id: ${p.gsis_id})`));
 
+    // ─── ÜBERGANGSLÖSUNG FÜR ROOKIES OHNE nflverse-sleeper_id (siehe Chat) ───────
+    // nflverses Rosters-CSV hat für ganz frische Rookies/Neuzugänge oft noch keine
+    // sleeper_id hinterlegt (Crosswalk-Verzögerung) — die fallen VOR fetchTeamRosterYear
+    // schon komplett raus (siehe [Roster] X Spieler übersprungen-Log). Da wir aber ihr
+    // TEAM bereits über Sleeper direkt kennen, ergänzen wir sie hier manuell aus dem
+    // vollen Sleeper-Feed und gleichen ihre Position NUR NAMENTLICH (nicht per ID) gegen
+    // PFFs Team-Roster ab — eine Übergangslösung, bis nflverse die echte ID nachliefert.
+    const DL_SET = new Set(['DE','DT','NT','EDGE','IDL','DL']);
+    const LB_SET = new Set(['LB','ILB','MLB','OLB']);
+    const DB_SET = new Set(['CB','FS','SS','S','DB','SAF']);
+    function isIdpPosition(tag){
+      const t = (tag||'').toUpperCase();
+      return DL_SET.has(t) || LB_SET.has(t) || DB_SET.has(t);
+    }
+    function normalizeNameForMatch(name){
+      return (name||'')
+        .toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // Akzente entfernen
+        .replace(/[^a-z\s]/g, '') // Satzzeichen/Suffixe raus
+        .replace(/\b(jr|sr|ii|iii|iv|v)\b/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    const existingSleeperIds = new Set(rosterRows.map(p => p.sleeper_id));
+    const rookieFallbacks = [];
+    Object.entries(sleeperAll).forEach(([sid, sr]) => {
+      if(!sr || sr.team !== abbr) return;
+      if(existingSleeperIds.has(sid)) return;
+      const tags = (sr.fantasy_positions && sr.fantasy_positions.length) ? sr.fantasy_positions : [sr.position];
+      if(!tags.some(isIdpPosition)) return;
+      const p = {
+        sleeper_id: sid, full_name: sr.full_name || `${sr.first_name||''} ${sr.last_name||''}`.trim(),
+        gsis_id: '', pff_id: '', espn_id: sr.espn_id || '', pfr_id: '',
+        depth_chart_position: sr.depth_chart_position || '', position: sr.position || '',
+        jersey_number: sr.number || '', status: sr.status || '',
+        injury: (year === CURRENT_SEASON_YEAR) ? (sr.injury_status || '') : '', // gsis_id fehlt hier, daher kein nflverse-Override möglich
+        isRookieFallback: true,
+      };
+      rosterRows.push(p);
+      rookieFallbacks.push(p);
+    });
+    if(rookieFallbacks.length){
+      console.log(`[Roster] ${rookieFallbacks.length} Rookies/Neuzugänge ohne nflverse-sleeper_id über Sleeper direkt ergänzt (Position wird gleich per PFF-Namensabgleich versucht):`,
+        rookieFallbacks.map(p => p.full_name));
+    }
+
+    // currentTeam für die neu ergänzten Rookies nachtragen (der reguläre forEach
+    // oben lief schon durch, bevor sie existierten).
+    rookieFallbacks.forEach(p => {
+      const sr = sleeperAll[p.sleeper_id];
+      p.currentTeam = (sr && sr.team) || abbr;
+    });
+
     // PFF-Team-Roster(s) für ALLE tatsächlich betroffenen AKTUELLEN Teams laden —
     // nicht nur für `abbr`. Wenn ein Spieler seither getradet/released wurde, muss
     // die Position bei SEINEM jetzigen Team abgefragt werden (exakt wie player.html
@@ -2265,12 +2319,47 @@ async function renderRoster(abbr, year){
       pffByTeam[t] = await fetchPffRosterMap(t);
     }));
 
+    // Jetzt, wo pffByTeam steht: Rookies NAMENTLICH gegen PFFs Team-Roster abgleichen
+    // (kein pff_id vorhanden, also kein ID-Match möglich — bewusst nur ein 1:1-
+    // Namensabgleich, keine unscharfe Ähnlichkeitssuche, um Fehlzuordnungen zu vermeiden).
+    rookieFallbacks.forEach(p => {
+      const { rawPlayers } = pffByTeam[p.currentTeam] || { rawPlayers: [] };
+      const target = normalizeNameForMatch(p.full_name);
+      const match = rawPlayers.find(pl => normalizeNameForMatch(pl.name) === target);
+      if(match && match.position){
+        p.nameMatchedPffPosition = PFF_POS_MAP[match.position.toUpperCase()] || null;
+      }
+      if(p.nameMatchedPffPosition){
+        console.log(`[Roster] Rookie ${p.full_name} per PFF-Namensabgleich zugeordnet: ${p.nameMatchedPffPosition}`);
+      } else {
+        console.log(`[Roster] Rookie ${p.full_name}: kein 1:1-Namenstreffer bei PFF (${p.currentTeam}) — Fallback auf nflverse/Sleeper-Position.`);
+      }
+    });
+
     // Auf IDP-relevante Spieler filtern + Gruppe zuordnen
     const grouped = { DI: [], ED: [], LB: [], CB: [], S: [] };
     let freshIdUsed = 0;
     const droppedPlayers = []; // Spieler, die in KEINEM der 5 Buckets landen (weder PFF noch Fallback)
     rosterRows.forEach(p => {
       const { pffMap, rawPlayers } = pffByTeam[p.currentTeam] || { pffMap: new Map(), rawPlayers: [] };
+
+      // Rookies/Neuzugänge ohne nflverse-sleeper_id (siehe Chat): kein pff_id
+      // vorhanden, also übernimmt der PFF-NAMENSABGLEICH von oben direkt die
+      // Rolle von pffPos — kein ID-basiertes Matching, keine "keine PFF-
+      // Position"-Diagnose nötig, die wäre hier irreführend.
+      if(p.isRookieFallback){
+        const pffPos = p.nameMatchedPffPosition || null;
+        const finalGroup = (pffPos && ['DI','ED','LB','CB','S'].includes(pffPos))
+          ? pffPos
+          : classifyIdpGroup(null, p.depth_chart_position, p.position);
+        if(finalGroup){
+          grouped[finalGroup].push(p);
+        } else {
+          droppedPlayers.push({ name: p.full_name, sleeper_id: p.sleeper_id, dcp: p.depth_chart_position, pos: p.position, status: p.status, note: 'Rookie-Fallback ohne jede Positionsquelle' });
+        }
+        return;
+      }
+
       // pff_id BEVORZUGT aus der aktuellen Saison auflösen (wie player.html es via
       // enrichIds() tut) — die pff_id aus einem älteren Rosters-Snapshot kann
       // veraltet sein und nicht mehr zu PFFs eigener ID passen.

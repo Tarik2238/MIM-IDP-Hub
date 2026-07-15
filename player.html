@@ -750,6 +750,35 @@ async function loadSchedule(yr){
 // damit sowohl nvFetch als auch enrichIds darauf zugreifen können.
 const NV_POS_MAP={NT:'DT',DT:'DT',DE:'ED',OLB:'ED',ILB:'LB',MLB:'LB',CB:'CB',SS:'S',S:'S'};
 
+// NEUE Priorität (siehe Chat, Devin-White-vs-Kyle-Van-Noy-Fall): PFF zuerst. Liefert
+// PFF nichts, nutzen wir Sleepers eigene fantasy_positions-Gruppierung (p.positions,
+// via idpGroups() schon auf DL/LB/DB verdichtet) als Indikator, BEVOR wir überhaupt
+// nflverses "OLB"-Label anfassen — das kann nämlich sowohl einen echten Edge-Rusher
+// (Van Noy) als auch einen klassischen Off-Ball-Backer (White) bezeichnen:
+//   - Sleeper führt SOWOHL "DL" ALS AUCH "LB" → Tweener-Edge-Rusher → ED
+//   - Sleeper führt NUR "LB" → klassischer Off-Ball-Backer → LB, fertig
+//   - Sleeper führt NUR "DL" → generischer Lineman-Tag, nflverse für DT/NT vs. DE konsultieren
+//   - Sleeper führt "DB" → nflverse für CB vs. S konsultieren
+function classifyViaSleeperTag(positions, dcpRaw){
+  const tags = new Set((positions||[]).map(t => (t||'').toUpperCase()));
+  const hasDL = tags.has('DL'), hasLB = tags.has('LB'), hasDB = tags.has('DB');
+  const dcp = (dcpRaw||'').toUpperCase();
+
+  if(hasDL && hasLB) return 'ED';
+  if(hasLB) return 'LB';
+  if(hasDL){
+    if(['DT','NT'].includes(dcp)) return 'DT'; // "DI" heißt in player.html traditionell "DT"
+    if(['DE','EDGE','OLB'].includes(dcp)) return 'ED';
+    return 'DT';
+  }
+  if(hasDB){
+    if(dcp === 'CB') return 'CB';
+    if(['S','FS','SS'].includes(dcp)) return 'S';
+    return null;
+  }
+  return null;
+}
+
 // MANUELLE AUSNAHMELISTE — für Fälle, in denen der nflverse-Rohwert selbst schlicht
 // falsch/veraltet ist (nicht nur eine Scheme-Namenskonvention wie DE vs. OLB bei
 // echten Edge-Rushern). Beispiel: Demetrius Knight (Bengals) läuft bei nflverse als
@@ -1033,6 +1062,7 @@ async function enrichIds(p){
   const years=[];
   for(let y=CUR_YEAR;y>=MIN_NV_YEAR;y--)years.push(y);
   let nvPositionMapped=null;
+  let nvDepthChartRaw=null;
   for(const yr of years){
     const nv=await nvFetch(p,yr);
     if(nv){
@@ -1046,6 +1076,7 @@ async function enrichIds(p){
       if(nv.pfr_id&&nv.pfr_id!=='NA'&&!p.pfr_id){p.pfr_id=nv.pfr_id;}
       try{
         if(nv.depth_chart_position&&!nvPositionMapped){
+          nvDepthChartRaw=nv.depth_chart_position;
           nvPositionMapped=NV_POS_MAP[nv.depth_chart_position.toUpperCase()]||nv.depth_chart_position;
         }
         if(nv.draft_number&&!p.draft_number_nv){
@@ -1064,14 +1095,23 @@ async function enrichIds(p){
     }
   }
 
-  // Positions-Badge: Priorität PFF position (frei sichtbar, präziser: ED/DI) >
-  // nflverse depth_chart_position (Fallback, falls PFF nichts liefert oder fehlschlägt).
+  // Positions-Badge: Priorität 1) PFF position (präziser: ED/DI)  2) Sleepers
+  // eigener fantasy_positions-Tag (DL+LB-Kombi = Edge-Rusher, nur LB = Off-Ball-
+  // Backer) — löst das OLB-Dilemma, bevor nflverses mehrdeutiges Label überhaupt
+  // konsultiert wird  3) alter nflverse-Fallback als letzte Rettung.
   try{
     const badge=document.getElementById('ph-nv-badge');
     let finalPos=null;
     if(p.team && p.full_name){
       finalPos=await fetchPffGradePosition(p.team, p.pff_id, p.full_name);
       if(finalPos) p.pos_src='PFF';
+    }
+    if(!finalPos){
+      const sleeperBased = classifyViaSleeperTag(p.positions, nvDepthChartRaw);
+      if(sleeperBased){
+        finalPos=sleeperBased;
+        p.pos_src='Sleeper';
+      }
     }
     if(!finalPos && nvPositionMapped){
       finalPos=nvPositionMapped;

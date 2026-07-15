@@ -800,6 +800,41 @@ function classifyIdpGroup(pffPos, dcp, pos){
   return null; // Offense/Special Teams — für die IDP-Roster-Ansicht nicht relevant
 }
 
+// NEUE Priorität (siehe Chat): PFF zuerst. Liefert PFF nichts, nutzen wir Sleepers
+// eigenen fantasy_positions-Tag als Indikator, BEVOR wir überhaupt nflverse
+// anfassen — kein "OLB"-Rätselraten mehr nötig:
+//   - Sleeper führt SOWOHL "DL" ALS AUCH "LB" → Tweener-Edge-Rusher (z.B. Kyle Van
+//     Noy) → ED. Genau dieser Doppel-Tag ist der verlässliche Indikator, den
+//     nflverses einzelnes "OLB"-Label nicht liefern kann.
+//   - Sleeper führt NUR "LB" (kein DL) → klassischer Off-Ball-Backer (z.B. Devin
+//     White) → LB, fertig, kein nflverse nötig.
+//   - Sleeper führt NUR "DL" (kein LB) → generischer Lineman-Tag, nflverse für die
+//     genaue Sorte (DT/NT → DI, DE → ED) konsultieren.
+//   - Sleeper führt "DB" → nflverse für CB vs. S konsultieren.
+//   - Nichts davon eindeutig → alter dcp/pos-Fallback als letzte Rettung.
+function classifyViaSleeperTag(pffPos, fantasyPositions, dcp, pos){
+  if(pffPos && ['DI','ED','LB','CB','S'].includes(pffPos)) return pffPos;
+
+  const tags = new Set((fantasyPositions||[]).map(t => (t||'').toUpperCase()));
+  const hasDL = tags.has('DL'), hasLB = tags.has('LB'), hasDB = tags.has('DB');
+
+  if(hasDL && hasLB) return 'ED';
+  if(hasLB) return 'LB';
+  if(hasDL){
+    const t = (dcp || pos || '').toUpperCase();
+    if(['DT','NT'].includes(t)) return 'DI';
+    if(['DE','EDGE','OLB'].includes(t)) return 'ED';
+    return 'DI'; // generischer DL-Tag ohne genauere nflverse-Angabe — DI als Standardannahme
+  }
+  if(hasDB){
+    const t = (dcp || pos || '').toUpperCase();
+    if(t === 'CB') return 'CB';
+    if(['S','FS','SS'].includes(t)) return 'S';
+    return null; // unklar — lieber nichts zuordnen als raten
+  }
+  return classifyIdpGroup(null, dcp, pos); // kein/unklarer Sleeper-Tag — alter Fallback als letzte Rettung
+}
+
 async function fetchPffRosterMap(abbr){
   const pffMap = new Map(); // pff_id -> genaue Position
   let rawPlayers = [];
@@ -824,37 +859,24 @@ async function fetchPffRosterMap(abbr){
 // gesucht). Grund für den Bug (Jermaine Johnson landete bei LB statt ED): die
 // pff_id in älteren Rosters-Snapshots kann veraltet/falsch sein, während die
 // aktuelle Saison-CSV die richtige, zu PFFs eigener ID passende pff_id führt.
+// WICHTIG (siehe Chat, Devin-White-Fall): das gilt NUR für pff_id/gsis_id, die
+// sich über die Jahre nie ändern. Die depth_chart_position/position dagegen
+// wird bewusst NICHT mehr hier mehrjährig aufgelöst — die muss exakt aus dem
+// gerade angezeigten Jahr kommen (siehe classifyIdpGroup-Aufruf weiter unten),
+// sonst rutscht z.B. ein 2026er-Platzhalter-Wert in die 2025er-Anzeige.
 let currentYearPffIdMapPromise = null;
-// Liefert {pff_id, gsis_id} bevorzugt aus der AKTUELLEN Saison-CSV — deckt jetzt
-// BEIDE IDs ab (ein einziger Fetch), da derselbe Bug (veraltete/falsche ID in
-// einem älteren Jahres-Snapshot) genauso bei gsis_id auftrat: Micah Parsons zeigte
-// keinen Injury-Status, weil die 2026er-Roster-Zeile eine gsis_id führte, die nicht
-// (mehr) zu nflverses Injury-Daten passte.
-// Identische Fallback-Zuordnung wie player.html's NV_POS_MAP — WICHTIG: dieselbe
-// Tabelle wie im Profil, damit "der lila Wert aus dem Profil" (das dort sichtbare
-// Fallback-Badge) und Team Roster garantiert übereinstimmen (siehe Chat).
-const NV_POS_MAP_TEAMROSTER = {NT:'DI',DT:'DI',DE:'ED',OLB:'ED',ILB:'LB',MLB:'LB',CB:'CB',SS:'S',S:'S'};
 
 function fetchCurrentYearPffIdMap(){
   if(currentYearPffIdMapPromise) return currentYearPffIdMapPromise;
   currentYearPffIdMapPromise = (async () => {
-    const map = new Map(); // sleeper_id -> { pff_id, gsis_id, fallbackGroup }
-    // WICHTIG (siehe Chat, Kyle Van Noy-Fall): nicht nur die aktuelle Saison-CSV
-    // prüfen, sondern wie player.html's enrichIds() rückwärts bis 2022 suchen und
-    // den jeweils NEUESTEN verfügbaren Wert nehmen — jetzt auch für
-    // depth_chart_position/position, nicht nur für pff_id/gsis_id. Grund: eine
-    // EINZELNE Jahres-Zeile (z.B. 2025 bei einem bestimmten Team) kann einen
-    // anderen depth_chart_position-Wert führen als das, was im Spielerprofil
-    // (mehrjährig aufgelöst) angezeigt wird — genau das hat bei Van Noy zu
-    // unterschiedlichen Ergebnissen zwischen Profil und Team Roster geführt.
+    const map = new Map(); // sleeper_id -> { pff_id, gsis_id }
     const MIN_NV_YEAR = 2022;
     for(let yr = CURRENT_SEASON_YEAR; yr >= MIN_NV_YEAR; yr--){
       const text = await fetchNflverseCSV(NV_ROSTER_URL(yr));
       if(!text) continue;
       const lines = text.split('\n').filter(l => l.trim());
       const H = parseCsvLine(lines[0]).map(h => h.trim().toLowerCase());
-      const iSl = H.indexOf('sleeper_id'), iPf = H.indexOf('pff_id'), iGs = H.indexOf('gsis_id'),
-            iDcp = H.indexOf('depth_chart_position'), iPos = H.indexOf('position');
+      const iSl = H.indexOf('sleeper_id'), iPf = H.indexOf('pff_id'), iGs = H.indexOf('gsis_id');
       if(iSl < 0) continue;
       for(let i=1;i<lines.length;i++){
         const row = parseCsvLine(lines[i]);
@@ -862,18 +884,12 @@ function fetchCurrentYearPffIdMap(){
         if(!sid) continue;
         const pid = iPf>=0 ? (row[iPf]||'').trim() : '';
         const gid = iGs>=0 ? (row[iGs]||'').trim() : '';
-        const dcp = iDcp>=0 ? (row[iDcp]||'').trim() : '';
-        const pos = iPos>=0 ? (row[iPos]||'').trim() : '';
-        const existing = map.get(sid) || { pff_id: '', gsis_id: '', fallbackGroup: null };
+        const existing = map.get(sid) || { pff_id: '', gsis_id: '' };
         // Nur befüllen, was noch fehlt — wir gehen absteigend (neuestes Jahr
         // zuerst), ein schon gefundener Wert aus einem neueren Jahr hat also
         // automatisch Vorrang und wird nicht mehr überschrieben.
         if(!existing.pff_id && pid && pid !== 'NA') existing.pff_id = pid;
         if(!existing.gsis_id && gid && gid !== 'NA') existing.gsis_id = gid;
-        if(!existing.fallbackGroup){
-          const t = ((dcp && dcp !== 'NA') ? dcp : (pos && pos !== 'NA') ? pos : '').toUpperCase();
-          if(t && NV_POS_MAP_TEAMROSTER[t]) existing.fallbackGroup = NV_POS_MAP_TEAMROSTER[t];
-        }
         map.set(sid, existing);
       }
     }
@@ -2113,7 +2129,7 @@ function renderRosterPlayerRow(p, snapInfo, summary, prevSummary){
 // laden muss. 6h TTL — unterjährig aktualisieren sich Stats/Snaps laufend, ein
 // 23h-Cache wie sonst im Projekt üblich wäre hier zu träge.
 const ROSTER_CACHE_TTL = 6*60*60*1000;
-function rosterCacheKey(abbr, year){ return `mim_roster_v14_${abbr}_${year}`; }
+function rosterCacheKey(abbr, year){ return `mim_roster_v16_${abbr}_${year}`; }
 // Trimmt snapData vor dem Cachen auf das WIRKLICH Nötige: nur die pfr_ids der
 // Spieler auf diesem Roster, nur die Team-Wochen-Nenner für DIESES Team. Ohne das
 // würde jeder Team-Cache-Eintrag versuchen, die komplette Liga-Snap-Counts-Datei
@@ -2154,7 +2170,7 @@ function loadRosterCache(abbr, year){
 // irgendwann die komplette localStorage-Quota — genau das, was das "quota
 // exceeded" im Chat verursacht hat.
 function cleanupExpiredRosterCaches(){
-  const prefix = 'mim_roster_v14_';
+  const prefix = 'mim_roster_v16_';
   const toRemove = [];
   for(let i=0; i<localStorage.length; i++){
     const key = localStorage.key(i);
@@ -2185,7 +2201,7 @@ function saveRosterCacheLocal(abbr, year, grouped, statsById, snapData, prevStat
     console.warn('[Roster] Speicher voll trotz Aufräumen — entferne ALLE Roster-Caches und versuche erneut:', e.message);
     for(let i=localStorage.length-1; i>=0; i--){
       const key = localStorage.key(i);
-      if(key && key.startsWith('mim_roster_v14_')) localStorage.removeItem(key);
+      if(key && key.startsWith('mim_roster_v16_')) localStorage.removeItem(key);
     }
     try{ localStorage.setItem(rosterCacheKey(abbr, year), payload); }
     catch(e2){ console.warn('[Roster] Cache konnte auch nach Aufräumen nicht gespeichert werden:', e2.message); }
@@ -2197,7 +2213,7 @@ function saveRosterCache(abbr, year, grouped, statsById, snapData, prevStatsById
   const serializedSnapData = saveRosterCacheLocal(abbr, year, grouped, statsById, snapData, prevStatsById);
   // GETEILT (Firestore): der nächste Besucher — egal welcher Browser — bekommt
   // dieses Team+Jahr dann sofort, ohne selbst neu zu rechnen (siehe Chat).
-  saveSharedCache(`roster_v2_${abbr}_${year}`, { grouped, statsById, snapData: serializedSnapData, prevStatsById: prevStatsById || {} })
+  saveSharedCache(`roster_v4_${abbr}_${year}`, { grouped, statsById, snapData: serializedSnapData, prevStatsById: prevStatsById || {} })
     .then(ok => { if(ok) console.log(`[Roster] Geteilter Cache (Firestore) für ${abbr} ${year} geschrieben.`); });
 }
 
@@ -2279,7 +2295,7 @@ async function renderRoster(abbr, year){
   // zusammenrechnen, schauen wir, ob ein ANDERER Besucher das für dieses
   // Team+Jahr schon berechnet hat — spart bei jedem außer dem allerersten
   // Besucher die komplette Ladezeit (siehe Chat).
-  const sharedKey = `roster_v2_${abbr}_${year}`;
+  const sharedKey = `roster_v4_${abbr}_${year}`;
   const shared = await loadSharedCache(sharedKey);
   const sharedIsFresh = shared && shared.grouped &&
     (year < CURRENT_SEASON_YEAR || (Date.now() - (shared.updatedAt||0) < ROSTER_CACHE_TTL));
@@ -2453,9 +2469,8 @@ async function renderRoster(abbr, year){
       // Position"-Diagnose nötig, die wäre hier irreführend.
       if(p.isRookieFallback){
         const pffPos = p.nameMatchedPffPosition || null;
-        const finalGroup = (pffPos && ['DI','ED','LB','CB','S'].includes(pffPos))
-          ? pffPos
-          : classifyIdpGroup(null, p.depth_chart_position, p.position);
+        const sr = sleeperAll[p.sleeper_id];
+        const finalGroup = classifyViaSleeperTag(pffPos, sr && sr.fantasy_positions, p.depth_chart_position, p.position);
         if(finalGroup){
           grouped[finalGroup].push(p);
         } else {
@@ -2488,18 +2503,17 @@ async function renderRoster(abbr, year){
         ) : null;
         console.info(`[Roster] Gar keine pff_id für ${p.full_name} (weder aktuelle noch Jahres-CSV) — ähnlichster PFF-Eintrag bei ${p.currentTeam}:`, nearMatch);
       }
-      // Priorität: 1) echte PFF-Position  2) mehrjährig aufgelöster nflverse-
-      // Fallback (identisch zum "via nflverse"-Badge im Profil)  3) einzelne
-      // Jahres-Zeile als letzte Notlösung, falls auch das fehlt (siehe Chat).
-      const resolvedFallbackGroup = (currentYearPffIdMap.get(p.sleeper_id)||{}).fallbackGroup;
-      const finalGroup = (pffPos && ['DI','ED','LB','CB','S'].includes(pffPos))
-        ? pffPos
-        : (resolvedFallbackGroup || classifyIdpGroup(null, p.depth_chart_position, p.position));
+      // Priorität: 1) echte PFF-Position  2) Sleepers fantasy_positions-Tag als
+      // Indikator (DL+LB-Kombi = Edge-Rusher, nur LB = Off-Ball-Backer)  3) erst
+      // dann nflverse depth_chart_position/position DES EXAKT AUSGEWÄHLTEN
+      // JAHRES zur Fein-Unterscheidung (DI vs. ED innerhalb DL, CB vs. S
+      // innerhalb DB) — siehe Chat, löst das OLB-Dilemma (Van Noy vs. White).
+      const sr = sleeperAll[p.sleeper_id];
+      const finalGroup = classifyViaSleeperTag(pffPos, sr && sr.fantasy_positions, p.depth_chart_position, p.position);
       if(!pffPos){
-        // DIAGNOSE: zeigt exakt, welcher Wert für die Fallback-Entscheidung
-        // herangezogen wurde — zum direkten Abgleich mit dem "via nflverse"-Log
-        // im Spielerprofil (siehe Chat).
-        console.info(`[Roster] Fallback für ${p.full_name}: mehrjährig aufgelöste Gruppe = ${resolvedFallbackGroup||'(keine)'}, einzelne Jahres-Zeile (depth_chart_position="${p.depth_chart_position}", position="${p.position}") → finale Gruppe = ${finalGroup}`);
+        // DIAGNOSE: zeigt exakt, welche Werte zur Fallback-Entscheidung
+        // herangezogen wurden.
+        console.info(`[Roster] Fallback für ${p.full_name} (${year}): Sleeper-Tags=${JSON.stringify((sr&&sr.fantasy_positions)||[])}, depth_chart_position="${p.depth_chart_position}", position="${p.position}" → finale Gruppe = ${finalGroup}`);
       }
       if(finalGroup){
         grouped[finalGroup].push(p);

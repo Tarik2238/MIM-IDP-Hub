@@ -944,9 +944,13 @@ async function isPlayerInLeague(playerId, lgId){
 // Only call this if player is confirmed in the league
 async function fetchWeeklyPtsMatchups(playerId,yr,lgId,maxWk){
   const result={};
-  for(let wk=1;wk<=maxWk;wk++){
+  // Parallel statt sequenziell (siehe Chat) — vorher wurden bis zu 18 Wochen
+  // NACHEINANDER abgewartet, obwohl jede Woche unabhängig abrufbar ist. Das war
+  // der mit Abstand größte Bremsklotz beim Laden der Season Stats.
+  const weeks=Array.from({length:maxWk},(_,i)=>i+1);
+  await Promise.all(weeks.map(async wk=>{
     try{
-      const r=await fetch(LEAGUE_MU(lgId,wk));if(!r.ok)continue;
+      const r=await fetch(LEAGUE_MU(lgId,wk));if(!r.ok)return;
       const ms=await r.json();
       for(const m of ms){
         const pp=m.players_points||{};
@@ -956,7 +960,7 @@ async function fetchWeeklyPtsMatchups(playerId,yr,lgId,maxWk){
         }
       }
     }catch{}
-  }
+  }));
   return result;
 }
 
@@ -999,19 +1003,48 @@ document.addEventListener('click',e=>{if(!e.target.closest('.nav-search-wrap'))d
 function splitCSV(l){const c=[];let cur='',q=false;for(const ch of l){if(ch==='"'){q=!q;}else if(ch===','&&!q){c.push(cur.trim());cur='';}else cur+=ch;}c.push(cur.trim());return c;}
 
 // ── LOAD ─────────────────────────────────────────────────────────────────────
+// Dedizierter Cache für die ROHDATEN EINES Spielers (nicht die ganze DB) — die
+// bisherige Suchindex-Cache war bewusst schlank gehalten (siehe Kommentar unten),
+// wodurch bei JEDEM Profilaufruf die KOMPLETTE Sleeper-Spielerdatenbank (mehrere
+// MB, tausende Spieler) neu heruntergeladen wurde, nur um EINEN Datensatz
+// rauszuziehen — das war der Haupt-Bremsklotz beim Laden (siehe Chat).
+const PLAYER_RAW_CACHE_PREFIX='mim_player_raw_v1_', PLAYER_RAW_CACHE_TTL=23*60*60*1000;
+function getCachedPlayerRaw(id){
+  try{
+    const s=store();
+    const ts=s.getItem(PLAYER_RAW_CACHE_PREFIX+id+'_ts');
+    if(ts && Date.now()-parseInt(ts)<PLAYER_RAW_CACHE_TTL){
+      const raw=s.getItem(PLAYER_RAW_CACHE_PREFIX+id);
+      if(raw) return JSON.parse(raw);
+    }
+  }catch{}
+  return null;
+}
+function setCachedPlayerRaw(id, rawData){
+  try{
+    const s=store();
+    s.setItem(PLAYER_RAW_CACHE_PREFIX+id, JSON.stringify(rawData));
+    s.setItem(PLAYER_RAW_CACHE_PREFIX+id+'_ts', Date.now().toString());
+  }catch{}
+}
+
 async function loadPlayer(){
   if(!TARGET_ID){sub('No player ID');return;}
   sub('Checking cache…');
   let p=null;
   const cached=(()=>{try{const s=store(),ts=s.getItem(CACHE_TS);if(ts&&Date.now()-parseInt(ts)<CACHE_TTL){const r=s.getItem(CACHE_KEY);return r?JSON.parse(r):null;}}catch{}return null;})();
-  // WICHTIG: der Cache enthält nur die SCHLANKE Such-Index-Version (sleeper_id,
+  // WICHTIG: der Suchindex-Cache enthält nur die SCHLANKE Version (sleeper_id,
   // full_name, position, team, espn_id) für die Suchleiste — NICHT die vollen
   // Detail-Felder (height/weight/age/years_exp/gsis_id/...), die buildP() braucht.
-  // Vorher wurde dieser schlanke Eintrag hier fälschlich direkt als "p" verwendet,
-  // wodurch z.B. years_exp als echtes JS `undefined` im Header landete
-  // ("undefinedY" nach Uppercase-CSS) und Height/Weight/Age leer blieben. Für den
-  // aktuell angezeigten Spieler holen wir deshalb IMMER den vollen Rohdatensatz.
   if(cached){ allPlayers=cached; }
+
+  // NEU: erst den dedizierten Einzel-Spieler-Cache prüfen — wenn frisch, sparen
+  // wir uns den kompletten DB-Download komplett (siehe Chat).
+  const cachedRaw = getCachedPlayerRaw(TARGET_ID);
+  if(cachedRaw){
+    p=buildP(TARGET_ID,cachedRaw);
+  }
+
   if(!p){
     sub('Fetching Sleeper…');
     try{
@@ -1025,6 +1058,7 @@ async function loadPlayer(){
         try{const s=store();s.setItem(CACHE_KEY,JSON.stringify(allPlayers));s.setItem(CACHE_TS,Date.now().toString());}catch{}
       }
       const raw=data[TARGET_ID];if(!raw)throw new Error('Player not found');
+      setCachedPlayerRaw(TARGET_ID, raw); // fürs nächste Mal: kein Komplett-Download mehr nötig
       p=buildP(TARGET_ID,raw);
     }catch(e){sub('Error: '+e.message);console.error(e);return;}
   }
@@ -1580,9 +1614,13 @@ async function loadAllStats(p){
   // falls enrichIds bereits gelaufen ist.
   sub('Loading snap counts…');
   if(!p.pfr_id){
-    for(const yr of [CUR_YEAR, CUR_YEAR-1, CUR_YEAR-2]){
-      const nv = await nvFetch(p, yr);
-      if(nv && nv.pfr_id && nv.pfr_id!=='NA'){ p.pfr_id = nv.pfr_id; console.log(`[MIM] pfr_id nachträglich aufgelöst: ${p.pfr_id} (${yr})`); break; }
+    // Parallel statt sequenziell (siehe Chat) — vorher wurden bis zu 3 Jahre
+    // NACHEINANDER abgewartet, obwohl sie unabhängig voneinander sind.
+    const candidateYears=[CUR_YEAR, CUR_YEAR-1, CUR_YEAR-2];
+    const results=await Promise.all(candidateYears.map(yr=>nvFetch(p, yr)));
+    for(let i=0;i<candidateYears.length;i++){
+      const nv=results[i];
+      if(nv && nv.pfr_id && nv.pfr_id!=='NA'){ p.pfr_id=nv.pfr_id; console.log(`[MIM] pfr_id nachträglich aufgelöst: ${p.pfr_id} (${candidateYears[i]})`); break; }
     }
     if(!p.pfr_id) console.warn(`[MIM] Keine pfr_id für ${p.full_name} gefunden (2022-${CUR_YEAR}) — Snaps bleiben auf Sleeper-Fallback.`);
   }

@@ -634,19 +634,22 @@ footer {
   <div class="modal" style="max-width:440px;">
     <button class="modal-close" id="bugreport-close-btn">&times;</button>
     <div class="modal-title">Bug melden</div>
-    <div class="modal-field" style="margin-top:16px;">
-      <label>Titel</label>
-      <input type="text" id="bugreport-title" placeholder="Kurze Zusammenfassung">
-    </div>
-    <div class="modal-field">
-      <label>Beschreibung</label>
-      <textarea id="bugreport-desc" rows="4" placeholder="Was ist passiert? Was hast du erwartet?" style="width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:10px 12px;color:var(--text);font-size:13px;font-family:'Inter',sans-serif;resize:vertical;"></textarea>
-    </div>
-    <div class="modal-field">
-      <label>Screenshot (optional)</label>
-      <input type="file" id="bugreport-screenshot" accept="image/*">
-    </div>
-    <button class="modal-submit" id="bugreport-submit">Senden</button>
+    <form id="bugreport-form" action="https://formspree.io/f/mqereoqr" method="POST" enctype="multipart/form-data">
+      <div class="modal-field" style="margin-top:16px;">
+        <label>Titel</label>
+        <input type="text" name="title" id="bugreport-title" placeholder="Kurze Zusammenfassung" required>
+      </div>
+      <div class="modal-field">
+        <label>Beschreibung</label>
+        <textarea name="description" id="bugreport-desc" rows="4" placeholder="Was ist passiert? Was hast du erwartet?" style="width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:10px 12px;color:var(--text);font-size:13px;font-family:'Inter',sans-serif;resize:vertical;" required></textarea>
+      </div>
+      <div class="modal-field">
+        <label>Screenshot (optional)</label>
+        <input type="file" name="screenshot" id="bugreport-screenshot" accept="image/*">
+      </div>
+      <input type="hidden" name="_subject" id="bugreport-subject-field" value="Bug Report">
+      <button type="submit" class="modal-submit" id="bugreport-submit">Senden</button>
+    </form>
     <div class="modal-error" id="bugreport-status"></div>
   </div>
 </div>
@@ -719,48 +722,34 @@ document.getElementById('bugreport-open-btn').addEventListener('click', (e) => {
 document.getElementById('bugreport-close-btn').addEventListener('click', () => bugOverlay.classList.remove('open'));
 bugOverlay.addEventListener('click', e => { if(e.target === bugOverlay) bugOverlay.classList.remove('open'); });
 
-document.getElementById('bugreport-submit').addEventListener('click', async () => {
-  const titleEl = document.getElementById('bugreport-title');
-  const descEl = document.getElementById('bugreport-desc');
-  const fileEl = document.getElementById('bugreport-screenshot');
-  const submitBtn = document.getElementById('bugreport-submit');
+// Formular geht jetzt per klassischer Weiterleitung direkt an Formspree (nicht
+// mehr per fetch/AJAX) — Grund: Formspree's Standard-CAPTCHA (ohne eigenen
+// reCAPTCHA/hCaptcha-Schlüssel) funktioniert laut deren eigener Doku NUR mit der
+// klassischen Formular-Weiterleitung, nicht mit AJAX (siehe Chat). Nutzer sehen
+// nach dem Absenden kurz Formspree's eigene Bestätigungsseite, bevor sie mit dem
+// Browser-"Zurück" wieder auf unsere Seite kommen.
+const FORMSPREE_ENDPOINT = 'https://formspree.io/f/mqereoqr';
 
+const bugOverlay = document.getElementById('bugreport-overlay');
+const bugStatus = document.getElementById('bugreport-status');
+document.getElementById('bugreport-open-btn').addEventListener('click', (e) => {
+  e.preventDefault();
   bugStatus.classList.remove('show');
-  bugStatus.style.color = '';
+  bugOverlay.classList.add('open');
+});
+document.getElementById('bugreport-close-btn').addEventListener('click', () => bugOverlay.classList.remove('open'));
+bugOverlay.addEventListener('click', e => { if(e.target === bugOverlay) bugOverlay.classList.remove('open'); });
 
-  if(!titleEl.value.trim() || !descEl.value.trim()){
-    bugStatus.textContent = 'Bitte Titel und Beschreibung ausfüllen.';
-    bugStatus.classList.add('show');
-    return;
-  }
-
-  const formData = new FormData();
-  formData.append('title', titleEl.value.trim());
-  formData.append('description', descEl.value.trim());
-  formData.append('_subject', `Bug Report: ${titleEl.value.trim()}`);
-  if(fileEl.files[0]) formData.append('screenshot', fileEl.files[0]);
-
+// Betreff dynamisch aus dem Titel setzen, bevor das Formular nativ abschickt
+// (kein preventDefault mehr — die eigentliche Übermittlung läuft jetzt ganz
+// normal über den Browser, inkl. CAPTCHA-Prüfung durch Formspree).
+document.getElementById('bugreport-form').addEventListener('submit', () => {
+  const title = document.getElementById('bugreport-title').value.trim();
+  document.getElementById('bugreport-subject-field').value = title ? `Bug Report: ${title}` : 'Bug Report';
+  const submitBtn = document.getElementById('bugreport-submit');
   submitBtn.disabled = true;
   submitBtn.textContent = 'Sende…';
-  try{
-    const res = await fetch(FORMSPREE_ENDPOINT, {
-      method: 'POST',
-      body: formData,
-      headers: { 'Accept': 'application/json' }
-    });
-    if(!res.ok) throw new Error('Server antwortete mit ' + res.status);
-    bugStatus.textContent = 'Danke! Dein Bug-Report wurde verschickt.';
-    bugStatus.style.color = '#3fb950';
-    bugStatus.classList.add('show');
-    titleEl.value = ''; descEl.value = ''; fileEl.value = '';
-    setTimeout(() => bugOverlay.classList.remove('open'), 2000);
-  }catch(err){
-    bugStatus.textContent = 'Senden fehlgeschlagen — bitte später erneut versuchen oder direkt an info@micsinmotion.de schreiben.';
-    bugStatus.classList.add('show');
-  }finally{
-    submitBtn.disabled = false;
-    submitBtn.textContent = 'Senden';
-  }
+  // Formular sendet jetzt ganz normal weiter — kein return false / preventDefault.
 });
 </script>
 

@@ -634,7 +634,7 @@ footer {
   <div class="modal" style="max-width:440px;">
     <button class="modal-close" id="bugreport-close-btn">&times;</button>
     <div class="modal-title">Bug melden</div>
-    <form id="bugreport-form" action="https://formspree.io/f/mqereoqr" method="POST" enctype="multipart/form-data">
+    <form id="bugreport-form" action="https://formspree.io/f/mqereoqr" method="POST">
       <div class="modal-field" style="margin-top:16px;">
         <label>Titel</label>
         <input type="text" name="title" id="bugreport-title" placeholder="Kurze Zusammenfassung" required>
@@ -642,10 +642,6 @@ footer {
       <div class="modal-field">
         <label>Beschreibung</label>
         <textarea name="description" id="bugreport-desc" rows="4" placeholder="Was ist passiert? Was hast du erwartet?" style="width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:10px 12px;color:var(--text);font-size:13px;font-family:'Inter',sans-serif;resize:vertical;" required></textarea>
-      </div>
-      <div class="modal-field">
-        <label>Screenshot (optional)</label>
-        <input type="file" name="screenshot" id="bugreport-screenshot" accept="image/*">
       </div>
       <input type="hidden" name="_subject" id="bugreport-subject-field" value="Bug Report">
       <button type="submit" class="modal-submit" id="bugreport-submit">Senden</button>

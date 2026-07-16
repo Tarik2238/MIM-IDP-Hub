@@ -275,9 +275,9 @@ nav{background:rgba(13,17,23,.97);backdrop-filter:blur(12px);border-bottom:1px s
 .tsg-team-logo{width:22px;height:22px;object-fit:contain;flex-shrink:0;}
 .tsg-group-hdr{background:var(--bg3);color:var(--muted2);font-size:10px;letter-spacing:.5px;text-transform:uppercase;text-align:center;}
 .tsg-table tbody .tsg-group-start{border-left:3px solid var(--orange-dim) !important;} /* Trennlinie nur im Datenbereich, bricht vor dem diagonalen Text im Kopf ab */
-.tsg-metric-hdr{background:var(--bg2);cursor:pointer;user-select:none;padding:0;height:110px;vertical-align:bottom;text-align:left;position:relative;overflow:visible;}
+.tsg-metric-hdr{background:var(--bg2);cursor:pointer;user-select:none;padding:6px 3px;width:76px;min-width:76px;max-width:76px;vertical-align:top;text-align:center;}
 .tsg-metric-hdr:hover{background:var(--orange-glow);}
-.tsg-metric-label{display:inline-block;white-space:nowrap;font-size:10px;color:var(--muted2);transform:rotate(-45deg);transform-origin:left bottom;position:absolute;left:16px;bottom:6px;}
+.tsg-metric-label{display:block;white-space:normal;word-break:break-word;font-size:9px;line-height:1.3;color:var(--muted2);}
 .tsg-table tbody tr:hover td{background:var(--bg3);}
 #tsg-container{width:100%;}
 #tsg-container table{min-width:100%;}
@@ -1286,9 +1286,23 @@ bindSectionToggle('lgd-toggle-hdr', 'lgd-body', 'lgd-toggle-chevron');
 // ═══════════════════════════════════════════════════════════════════════════
 // SEKTION 1: TEAM STATS — alle 32 Teams im Grid, sortierbar, Jahr per Dropdown
 // ═══════════════════════════════════════════════════════════════════════════
+// Kurze Kürzel für die Kopfzeile (volle Bezeichnung bleibt als Tooltip via
+// title-Attribut erhalten) — nötig, um ohne horizontales Scrollen auszukommen
+// (siehe Chat: gedrehter Text bei langen Labels war nicht praktikabel).
+const METRIC_SHORT_LABELS = {
+  'Total Defense Snaps':'Snaps', 'Snaps vs. Run':'vs Run', 'Snaps vs. Pass':'vs Pass', 'Defensive Plays/Game':'Plays/G',
+  'Points Allowed/Game':'Pts/G', 'Yards Allowed/Game':'Yds/G', 'Yards Allowed/Play':'Yds/Pl', 'TDs Allowed':'TDs',
+  'Rush Yards Allowed/Game':'RshYd/G', 'Rush Yards Allowed/Play':'RshYd/Pl', 'Rush TDs Allowed':'RshTD', 'Run Stop Rate':'StopRt',
+  'Pass Yards Allowed/Game':'PsYd/G', 'Pass Yards Allowed/Play':'PsYd/Pl', 'QB Hits':'QBHit', 'Pass TDs Allowed':'PsTD',
+  '3rd Down Conv.% Allowed':'3rd%', '4th Down Conv.% Allowed':'4th%', 'Explosive Play Rate Allowed':'Expl%',
+  'EPA Allowed/Play':'EPA', 'Success Rate Allowed':'Succ%', 'Havoc Rate':'Havoc',
+  'Sacks':'Sacks', 'INTs':'INTs', 'Fumbles Forced':'FF', 'Passes Defended (PBU)':'PBU',
+  'Penalties':'Pen', 'Penalty Yards':'PenYd',
+};
+
 function flattenTeamStatsMetrics(){
   const out = [];
-  TEAM_STATS_GROUPS.forEach(g => g.items.forEach(item => out.push({ ...item, group: g.title })));
+  TEAM_STATS_GROUPS.forEach(g => g.items.forEach(item => out.push({ ...item, group: g.title, shortLabel: METRIC_SHORT_LABELS[item.label] || item.label })));
   return out;
 }
 const ALL_METRICS = flattenTeamStatsMetrics();

@@ -269,10 +269,12 @@ nav{background:rgba(13,17,23,.97);backdrop-filter:blur(12px);border-bottom:1px s
 /* NFL-LIGA-ÜBERSICHT: Team-Stats-Grid (32 Teams × alle Kategorien) */
 .tsg-table{border-collapse:collapse;font-size:11px;white-space:nowrap;width:100%;table-layout:auto;}
 .tsg-table th, .tsg-table td{border:1px solid var(--border);padding:6px 8px;text-align:right;}
+.tsg-table thead th{border-left:none;border-right:none;border-top:none;} /* keine Box mehr um die Kopfzeilen, nur untere Trennlinie */
+.tsg-table thead tr:last-child th{border-bottom:1px solid var(--border2);}
 .tsg-team-cell{text-align:left;position:sticky;left:0;background:var(--bg2);z-index:2;font-weight:700;min-width:190px;display:flex;align-items:center;gap:8px;}
 .tsg-team-logo{width:22px;height:22px;object-fit:contain;flex-shrink:0;}
 .tsg-group-hdr{background:var(--bg3);color:var(--muted2);font-size:10px;letter-spacing:.5px;text-transform:uppercase;text-align:center;}
-.tsg-group-start{border-left:3px solid var(--orange-dim) !important;}
+.tsg-table tbody .tsg-group-start{border-left:3px solid var(--orange-dim) !important;} /* Trennlinie nur im Datenbereich, bricht vor dem diagonalen Text im Kopf ab */
 .tsg-metric-hdr{background:var(--bg2);cursor:pointer;user-select:none;padding:0;height:110px;vertical-align:bottom;text-align:left;position:relative;overflow:visible;}
 .tsg-metric-hdr:hover{background:var(--orange-glow);}
 .tsg-metric-label{display:inline-block;white-space:nowrap;font-size:10px;color:var(--muted2);transform:rotate(-45deg);transform-origin:left bottom;position:absolute;left:16px;bottom:6px;}

@@ -707,23 +707,8 @@ watchAuth(user => {
 // ─── BUG REPORT ─────────────────────────────────────────────────────────────
 // Nutzt Formspree (kostenloser Drittanbieter-Dienst) zum Versand, da eine reine
 // clientseitige Seite ohne eigenen Server keine E-Mails mit Anhang verschicken
-// kann. WICHTIG: Platzhalter-URL unten durch eure eigene Formspree-Endpunkt-ID
-// ersetzen (kostenloser Account auf formspree.io, 2 Minuten, liefert eine URL
-// wie https://formspree.io/f/xxxxxxxx).
-const FORMSPREE_ENDPOINT = 'https://formspree.io/f/mqereoqr';
-
-const bugOverlay = document.getElementById('bugreport-overlay');
-const bugStatus = document.getElementById('bugreport-status');
-document.getElementById('bugreport-open-btn').addEventListener('click', (e) => {
-  e.preventDefault();
-  bugStatus.classList.remove('show');
-  bugOverlay.classList.add('open');
-});
-document.getElementById('bugreport-close-btn').addEventListener('click', () => bugOverlay.classList.remove('open'));
-bugOverlay.addEventListener('click', e => { if(e.target === bugOverlay) bugOverlay.classList.remove('open'); });
-
-// Formular geht jetzt per klassischer Weiterleitung direkt an Formspree (nicht
-// mehr per fetch/AJAX) — Grund: Formspree's Standard-CAPTCHA (ohne eigenen
+// kann. Formular geht per klassischer Weiterleitung direkt an Formspree (nicht
+// per fetch/AJAX) — Grund: Formspree's Standard-CAPTCHA (ohne eigenen
 // reCAPTCHA/hCaptcha-Schlüssel) funktioniert laut deren eigener Doku NUR mit der
 // klassischen Formular-Weiterleitung, nicht mit AJAX (siehe Chat). Nutzer sehen
 // nach dem Absenden kurz Formspree's eigene Bestätigungsseite, bevor sie mit dem

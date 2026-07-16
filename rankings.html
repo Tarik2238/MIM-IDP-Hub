@@ -286,6 +286,7 @@ nav{background:rgba(13,17,23,.97);backdrop-filter:blur(12px);border-bottom:1px s
     <div class="search-res" id="search-res"></div>
   </div>
   <div class="search-hint" id="search-hint">Melde dich an, um dein eigenes Ranking zu bearbeiten.</div>
+  <div id="ranking-updated-at" style="position:absolute;top:16px;right:32px;font-size:11px;color:var(--muted);"></div>
 </div>
 
 <div class="board-wrap" id="board-wrap">
@@ -1078,6 +1079,18 @@ function applyBoardFromLatest(){
   board = (latestListDoc && latestListDoc.boards && latestListDoc.boards[currentPositionTag]) ? latestListDoc.boards[currentPositionTag] : emptyBoard();
   TIERS.forEach(t => { if(!board[t]) board[t] = []; });
   renderBoard();
+
+  const stampEl = document.getElementById('ranking-updated-at');
+  if(stampEl){
+    if(latestListDoc && latestListDoc.updatedAt){
+      const d = new Date(latestListDoc.updatedAt);
+      const datum = d.toLocaleDateString('de-DE');
+      const uhrzeit = d.toLocaleTimeString('de-DE', { hour:'2-digit', minute:'2-digit' });
+      stampEl.textContent = `Stand: ${datum}, ${uhrzeit} Uhr`;
+    } else {
+      stampEl.textContent = '';
+    }
+  }
 }
 
 // ── OVERVIEW (Konsens aus allen Rankings) ──────────────────────────────

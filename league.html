@@ -271,13 +271,13 @@ nav{background:rgba(13,17,23,.97);backdrop-filter:blur(12px);border-bottom:1px s
 .tsg-table th, .tsg-table td{border:1px solid var(--border);padding:6px 8px;text-align:right;}
 .tsg-table thead th{border:none;} /* keine Zellrahmen mehr im Kopfbereich — die schnitten vorher durch den diagonalen Text */
 .tsg-table thead tr:last-child th{border-bottom:1px solid var(--border2);}
-.tsg-team-cell{text-align:left;position:sticky;left:0;background:var(--bg2);z-index:2;font-weight:700;min-width:190px;display:flex;align-items:center;gap:8px;}
+.tsg-team-cell{text-align:left;position:sticky;left:0;background:var(--bg2);z-index:2;font-weight:700;min-width:160px;display:flex;align-items:center;gap:8px;}
 .tsg-team-logo{width:22px;height:22px;object-fit:contain;flex-shrink:0;}
 .tsg-group-hdr{background:var(--bg3);color:var(--muted2);font-size:10px;letter-spacing:.5px;text-transform:uppercase;text-align:center;}
 .tsg-table tbody .tsg-group-start{border-left:3px solid var(--orange-dim) !important;} /* Trennlinie nur im Datenbereich, bricht vor dem diagonalen Text im Kopf ab */
-.tsg-metric-hdr{background:var(--bg2);cursor:pointer;user-select:none;padding:6px 3px;width:76px;min-width:76px;max-width:76px;vertical-align:top;text-align:center;}
+.tsg-metric-hdr{background:var(--bg2);cursor:pointer;user-select:none;padding:5px 2px;width:64px;min-width:64px;max-width:64px;vertical-align:top;text-align:center;}
 .tsg-metric-hdr:hover{background:var(--orange-glow);}
-.tsg-metric-label{display:block;white-space:normal;word-break:break-word;font-size:9px;line-height:1.3;color:var(--muted2);}
+.tsg-metric-label{display:block;white-space:normal;word-break:normal;overflow-wrap:normal;font-size:9px;line-height:1.3;color:var(--muted2);}
 .tsg-table tbody tr:hover td{background:var(--bg3);}
 #tsg-container{width:100%;}
 #tsg-container table{min-width:100%;}
@@ -1354,7 +1354,8 @@ function renderTsgTable(){
     g.items.forEach((item,ii) => {
       const arrow = tsgSortState.col === mi ? (tsgSortState.dir === 'asc' ? ' ▲' : ' ▼') : '';
       const groupStartCls = (ii===0 && gi>0) ? ' tsg-group-start' : '';
-      metricHeaderHtml += `<th class="tsg-metric-hdr${groupStartCls}" data-col="${mi}" title="${item.label}"><span class="tsg-metric-label">${item.label}${arrow}</span></th>`;
+      const wrappableLabel = item.label.replace(/\//g, '/<wbr>');
+      metricHeaderHtml += `<th class="tsg-metric-hdr${groupStartCls}" data-col="${mi}" title="${item.label}"><span class="tsg-metric-label">${wrappableLabel}${arrow}</span></th>`;
       mi++;
     });
   });

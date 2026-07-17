@@ -191,6 +191,10 @@ nav{background:rgba(13,17,23,.97);backdrop-filter:blur(12px);border-bottom:1px s
 
   <div class="toolbar">
     <div class="tb-group">
+      <label>Saison</label>
+      <select class="tb-select" id="year-select"></select>
+    </div>
+    <div class="tb-group">
       <label>Woche</label>
       <select class="tb-select" id="week-select"></select>
     </div>
@@ -276,6 +280,7 @@ import { loadSharedCache } from './firebase-init.js';
 // ─── JAHR-LOGIK (identisch zu team.html/precompute.js) ──────────────────────
 function isPastMarch1(d){ return d >= new Date(d.getFullYear(), 2, 1); }
 const CURRENT_SEASON_YEAR = isPastMarch1(new Date()) ? new Date().getFullYear() : new Date().getFullYear() - 1;
+const MIN_YEAR = 2022; // identisch zu precompute.js — ältere Jahre hat das Precompute-Skript nicht befüllt
 
 // ─── TEAMS (identisch zu team-hub.html) ─────────────────────────────────────
 const TEAMS = [
@@ -399,6 +404,7 @@ function scoreTextColor(score){
 // ─── STATE ───────────────────────────────────────────────────────────────────
 let scheduleMap = null;       // team -> week -> {opp, home}
 let matchupsData = null;      // team -> {weeks:{wk:{...}}}
+let selectedYear = CURRENT_SEASON_YEAR;
 let currentWeek = null;
 let currentWindow = 3;
 let latestScored = null;      // Ergebnis von computeScoresAndRanks für die aktuelle Woche/Fenster
@@ -489,39 +495,55 @@ function renderMainCol(){
   `).join('');
 }
 
-function renderWeekSelect(){
+function renderYearSelect(){
+  const sel = document.getElementById('year-select');
+  const years = [];
+  for(let y = CURRENT_SEASON_YEAR; y >= MIN_YEAR; y--) years.push(y);
+  sel.innerHTML = years.map(y => `<option value="${y}" ${y===selectedYear?'selected':''}>${y}</option>`).join('');
+  sel.addEventListener('change', async () => {
+    selectedYear = parseInt(sel.value, 10);
+    await loadDataForYear(selectedYear);
+  });
+}
+// Options neu befüllen (bei Jahreswechsel) OHNE den change-Listener mehrfach zu
+// registrieren — der wird einmalig separat in initApp() angehängt.
+function populateWeekOptions(){
   const sel = document.getElementById('week-select');
   sel.innerHTML = Array.from({length:18}, (_,i) => i+1).map(w => `<option value="${w}" ${w===currentWeek?'selected':''}>Woche ${w}</option>`).join('');
-  sel.addEventListener('change', () => { currentWeek = parseInt(sel.value,10); recompute(); });
 }
-function renderWinTabs(){
-  document.querySelectorAll('.win-tab').forEach(btn => {
-    const val = btn.dataset.win === 'season' ? 'season' : parseInt(btn.dataset.win,10);
-    btn.classList.toggle('active', val === currentWindow);
+
+
+async function loadDataForYear(year){
+  document.getElementById('main-col').innerHTML = `<div class="loading-row">Lade Matchup-Daten für ${year}…</div>`;
+  const [sched, cache] = await Promise.all([
+    loadSchedule(year),
+    loadSharedCache(`matchups_${year}`),
+  ]);
+  scheduleMap = sched;
+  matchupsData = (cache && cache.teams) || null;
+  if(!matchupsData){
+    document.getElementById('main-col').innerHTML = `<div class="empty-state"><h3>Noch keine Matchup-Daten</h3><p>Der Precompute-Lauf für ${year} hat noch keine matchups_${year} geschrieben. Im GitHub-Repo unter Actions → "Precompute Team Stats &amp; Lineup Details" → Run workflow → Jahr-Feld mit ${year} befüllen.</p></div>`;
+    return;
+  }
+  currentWeek = computeDefaultWeek();
+  populateWeekOptions();
+  recompute();
+}
+
+async function initApp(){
+  document.getElementById('win-tabs').querySelectorAll('.win-tab').forEach(btn => {
     btn.addEventListener('click', () => {
-      currentWindow = val;
+      currentWindow = btn.dataset.win === 'season' ? 'season' : parseInt(btn.dataset.win,10);
       document.querySelectorAll('.win-tab').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       recompute();
     });
   });
-}
+  document.querySelector(`.win-tab[data-win="${currentWindow}"]`).classList.add('active');
+  document.getElementById('week-select').addEventListener('change', (e) => { currentWeek = parseInt(e.target.value,10); recompute(); });
 
-async function initApp(){
-  const [sched, cache] = await Promise.all([
-    loadSchedule(CURRENT_SEASON_YEAR),
-    loadSharedCache(`matchups_${CURRENT_SEASON_YEAR}`),
-  ]);
-  scheduleMap = sched;
-  matchupsData = (cache && cache.teams) || null;
-  if(!matchupsData){
-    document.getElementById('main-col').innerHTML = '<div class="empty-state"><h3>Noch keine Matchup-Daten</h3><p>Der Precompute-Lauf für diese Saison hat noch keine matchups_' + CURRENT_SEASON_YEAR + ' geschrieben.</p></div>';
-    return;
-  }
-  currentWeek = computeDefaultWeek();
-  renderWeekSelect();
-  renderWinTabs();
-  recompute();
+  renderYearSelect();
+  await loadDataForYear(selectedYear);
 }
 
 window._mimInitApp = initApp;

@@ -678,7 +678,15 @@ function normalizeContractTeam(raw){
 
 // (normalizeContractPosition wurde hier bewusst entfernt — Positions-Filter ist
 // laut Chat raus, da OverTheCap's Positions-Schreibweise nicht zuverlässig genug
-// war; Team+Name allein reicht aus, siehe findPlayerContract weiter unten.)
+// war.)
+
+// Manche OTC-Team-Felder enthalten mehrere Teams als "ARI/BAL" (Spieler mit
+// mehreren Verträgen/Trades in der Historie) — hier in eine Liste normalisierter
+// Abkürzungen zerlegen, damit der Team-Abgleich jedes Teilstück einzeln prüft.
+function normalizeContractTeams(raw){
+  if(!raw) return [];
+  return raw.split('/').map(part => normalizeContractTeam(part)).filter(Boolean);
+}
 
 async function fetchGzipCsv(url){
   try{
@@ -764,25 +772,39 @@ function normalizeContractName(raw){
     .trim();
 }
 
-// Matching-Reihenfolge (siehe Chat): TEAM zuerst, dann NAME — kein Positions-
-// Filter mehr, da OverTheCap's Positions-Schreibweise nicht zuverlässig genug
-// mit unserer übereinstimmt. Ist der Spieler im richtigen Team, reicht der Name
-// zur eindeutigen Zuordnung; kleine Namensabweichungen (Jr./Sr./Schreibweise)
-// werden dabei toleriert.
+// Matching-Reihenfolge (NEU — siehe Chat, Grund: Micah Parsons-Bug): NAME
+// zuerst, Team nur noch zur Disambiguierung bei mehreren Spielern mit
+// demselben Namen (z.B. Byron Young existiert 2x in der Liga-Realität).
+// Team-first ist gescheitert, weil OverTheCap das Team-Feld nach einem Trade
+// NICHT rückwirkend aktualisiert — Parsons steht dort weiterhin als
+// "Cowboys", obwohl er längst bei den Packers ist. Ein reiner Name-Abgleich
+// mit Team nur als Tie-Breaker (statt als Vorfilter) findet solche Verträge
+// trotzdem, ohne bei echten Namensdopplungen komplett zu raten.
 function findPlayerContract(rows, teamAbbr, fullName){
   if(!rows || !rows.length) return null;
   const targetTeam = teamAbbr ? teamAbbr.toUpperCase() : null;
   const targetName = normalizeContractName(fullName);
 
-  let candidates = rows;
-  if(targetTeam) candidates = candidates.filter(r => normalizeContractTeam(r.team) === targetTeam);
-  if(!candidates.length) return null; // kein Team-Treffer — kein Rateversuch nur über den Namen
-
-  const nameMatches = candidates.filter(r => normalizeContractName(r.player) === targetName);
+  const nameMatches = rows.filter(r => normalizeContractName(r.player) === targetName);
   if(!nameMatches.length) return null;
+  if(nameMatches.length === 1) return nameMatches[0];
 
-  // Bei mehreren Verträgen derselben Person (Historie): aktiven Vertrag bevorzugen,
-  // sonst den zuletzt unterschriebenen.
+  // Mehrdeutig (gleicher Name, mehrere Spieler) — zuerst versuchen, über das
+  // aktuelle Team einzugrenzen (inkl. "ARI/BAL"-Mehrfacheinträgen).
+  if(targetTeam){
+    const teamMatches = nameMatches.filter(r => normalizeContractTeams(r.team).includes(targetTeam));
+    if(teamMatches.length === 1) return teamMatches[0];
+    if(teamMatches.length > 1){
+      const active = teamMatches.find(r => r.is_active);
+      if(active) return active;
+      return teamMatches.sort((a,b) => (b.year_signed||0) - (a.year_signed||0))[0];
+    }
+  }
+
+  // Kein Team-Treffer (typischerweise: Spieler wurde getradet, OTC-Team-Feld
+  // ist veraltet) — auf aktiven Vertrag zurückfallen, sonst neuesten nehmen.
+  // Bei echten Namensdopplungen ohne Team-Treffer ist das ein Best-Effort-Fallback,
+  // keine Garantie — siehe Konsolen-Log in loadContractSection für Transparenz.
   const active = nameMatches.find(r => r.is_active);
   if(active) return active;
   return nameMatches.sort((a,b) => (b.year_signed||0) - (a.year_signed||0))[0];
@@ -807,7 +829,7 @@ async function loadContractSection(p){
     if(!contract){
       badge.textContent = 'Kein Treffer';
       badge.className = 'sec-badge';
-      wrap.innerHTML = '<div class="stats-ph"><p>Kein passender Vertrag gefunden (Team/Name-Abgleich ohne Treffer).</p></div>';
+      wrap.innerHTML = '<div class="stats-ph"><p>Kein passender Vertrag gefunden (kein Name-Treffer in den Contracts-Daten).</p></div>';
       console.log(`[Contracts] Kein Treffer für ${p.full_name} (Team=${p.team})`);
       return;
     }
@@ -825,7 +847,7 @@ async function loadContractSection(p){
         <div class="contract-card"><div class="contract-card-label">Garantiert</div><div class="contract-card-value">${fmtMoney(contract.guaranteed)}</div></div>
         <div class="contract-card"><div class="contract-card-label">% vom Cap (bei Unterschrift)</div><div class="contract-card-value">${contract.apy_cap_pct != null ? (contract.apy_cap_pct*100).toFixed(1)+'%' : '–'}</div></div>
       </div>
-      <div style="margin-top:10px;font-size:10px;color:var(--muted);">Quelle: OverTheCap.com via nflverse · Team→Position→Name-Abgleich, keine Live-Cap-Berechnung</div>
+      <div style="margin-top:10px;font-size:10px;color:var(--muted);">Quelle: OverTheCap.com via nflverse · Name-Abgleich (Team nur zur Disambiguierung bei gleichen Namen), keine Live-Cap-Berechnung</div>
     `;
   }catch(e){
     console.error('[Contracts] Fehler:', e);

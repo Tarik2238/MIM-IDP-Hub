@@ -114,6 +114,15 @@ nav{background:rgba(13,17,23,.97);backdrop-filter:blur(12px);border-bottom:1px s
 .cstat-val{font-family:'Bebas Neue',sans-serif;font-size:38px;color:var(--orange);line-height:1;}
 .cstat-lbl{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-top:5px;}
 .stats-ph{background:var(--bg3);border:1px dashed var(--border2);border-radius:var(--radius);padding:40px;text-align:center;}
+
+/* Vertrag & Cap — Kartenraster + aufklappbare Sektion */
+.contract-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;}
+.contract-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;}
+.contract-card-label{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
+.contract-card-value{font-family:'Bebas Neue',sans-serif;font-size:22px;color:#fff;letter-spacing:.5px;}
+.contract-active-badge{display:inline-block;font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;padding:2px 8px;border-radius:4px;margin-left:8px;vertical-align:middle;}
+.contract-active-badge.yes{color:var(--green-light);background:rgba(46,160,67,.12);border:1px solid rgba(46,160,67,.25);}
+.contract-active-badge.no{color:var(--muted);background:var(--bg3);border:1px solid var(--border);}
 .stats-ph p{color:var(--muted);font-size:13px;margin-top:8px;}
 .cum-bar{display:flex;background:rgba(196,114,42,.07);border:1px solid rgba(196,114,42,.18);border-radius:var(--radius);overflow:hidden;margin-bottom:14px;flex-wrap:wrap;}
 .cum-s{flex:1;min-width:70px;padding:14px 10px;text-align:center;border-right:1px solid rgba(196,114,42,.1);}
@@ -262,6 +271,16 @@ nav{background:rgba(13,17,23,.97);backdrop-filter:blur(12px);border-bottom:1px s
   </div>
 </div>
 <div class="main" id="main" style="display:none">
+  <div class="section">
+    <div class="sec-hdr" id="contract-toggle-hdr" style="cursor:pointer;user-select:none;">
+      <div class="sec-title">Vertrag & Cap</div>
+      <div class="sec-badge pending" id="contract-badge">Lädt…</div>
+      <span id="contract-toggle-chevron" style="margin-left:auto;font-size:14px;transition:transform .2s;">▾</span>
+    </div>
+    <div id="contract-body">
+      <div id="contract-wrap"><div class="stats-ph"><p>Lade Vertragsdaten…</p></div></div>
+    </div>
+  </div>
   <div class="section">
     <div class="sec-hdr">
       <div class="sec-title" id="cs-title">2026 Stats</div>
@@ -618,6 +637,263 @@ function idpG(pos,dc){const p=(pos||'').toUpperCase(),d=(dc||'').toUpperCase();c
 // liest Sleepers eigenes fantasy_positions[]-Array statt nur der einzelnen position.
 const IDPG_DL=new Set(['DE','DT','NT','EDGE','IDL','DL']),IDPG_LB=new Set(['LB','ILB','MLB','OLB']),IDPG_DB=new Set(['CB','FS','SS','S','DB','SAF']);
 function classifyTag(tag){const t=(tag||'').toUpperCase();if(IDPG_DL.has(t))return'DL';if(IDPG_LB.has(t))return'LB';if(IDPG_DB.has(t))return'DB';return null;}
+// ═══════════════════════════════════════════════════════════════════════════
+// VERTRAG & CAP — nflverse's "contracts"-Release (Quelle: OverTheCap.com)
+// ═══════════════════════════════════════════════════════════════════════════
+// Datei ist gzip-komprimiert (.csv.gz) — Browser können das nativ per
+// DecompressionStream entpacken, keine externe Bibliothek nötig.
+const CONTRACTS_URL = 'https://github.com/nflverse/nflverse-data/releases/download/contracts/historical_contracts.csv.gz';
+const CONTRACTS_CACHE_KEY = 'mim_contracts_v1';
+const CONTRACTS_CACHE_TTL = 23*60*60*1000; // 1x täglich reicht, Verträge ändern sich selten untertägig
+
+// Team-Namen-Normalisierung — OverTheCap könnte Stadt+Name, nur Nickname oder
+// Abkürzung liefern; alles auf UNSER Abkürzungsschema mappen, statt zu raten.
+const CONTRACT_TEAM_ALIASES = {
+  ARIZONA:'ARI',CARDINALS:'ARI', ATLANTA:'ATL',FALCONS:'ATL', BALTIMORE:'BAL',RAVENS:'BAL',
+  BUFFALO:'BUF',BILLS:'BUF', CAROLINA:'CAR',PANTHERS:'CAR', CHICAGO:'CHI',BEARS:'CHI',
+  CINCINNATI:'CIN',BENGALS:'CIN', CLEVELAND:'CLE',BROWNS:'CLE', DALLAS:'DAL',COWBOYS:'DAL',
+  DENVER:'DEN',BRONCOS:'DEN', DETROIT:'DET',LIONS:'DET', 'GREEN BAY':'GB',PACKERS:'GB',
+  HOUSTON:'HOU',TEXANS:'HOU', INDIANAPOLIS:'IND',COLTS:'IND', JACKSONVILLE:'JAX',JAGUARS:'JAX',
+  'KANSAS CITY':'KC',CHIEFS:'KC', 'LAS VEGAS':'LV',RAIDERS:'LV', 'LOS ANGELES CHARGERS':'LAC',CHARGERS:'LAC',
+  'LOS ANGELES RAMS':'LAR',RAMS:'LAR', MIAMI:'MIA',DOLPHINS:'MIA', MINNESOTA:'MIN',VIKINGS:'MIN',
+  'NEW ENGLAND':'NE',PATRIOTS:'NE', 'NEW ORLEANS':'NO',SAINTS:'NO', 'NEW YORK GIANTS':'NYG',GIANTS:'NYG',
+  'NEW YORK JETS':'NYJ',JETS:'NYJ', PHILADELPHIA:'PHI',EAGLES:'PHI', PITTSBURGH:'PIT',STEELERS:'PIT',
+  'SAN FRANCISCO':'SF','49ERS':'SF', SEATTLE:'SEA',SEAHAWKS:'SEA', 'TAMPA BAY':'TB',BUCCANEERS:'TB',
+  TENNESSEE:'TEN',TITANS:'TEN', WASHINGTON:'WAS',COMMANDERS:'WAS', LA:'LAR',
+};
+function normalizeContractTeam(raw){
+  if(!raw) return null;
+  const t = raw.trim().toUpperCase();
+  if(CONTRACT_TEAM_ALIASES[t]) return CONTRACT_TEAM_ALIASES[t];
+  // schon eine gültige Abkürzung?
+  if(/^[A-Z]{2,3}$/.test(t)) return t;
+  // Mehrwort-Stadtname (z.B. "Green Bay Packers") — letztes Wort ist meist der Nickname
+  const words = t.split(/\s+/);
+  for(let i=words.length-1;i>=0;i--){
+    const tail = words.slice(i).join(' ');
+    if(CONTRACT_TEAM_ALIASES[tail]) return CONTRACT_TEAM_ALIASES[tail];
+  }
+  return t; // unverändert zurück, Vergleich schlägt dann eben fehl statt zu raten
+}
+
+// (normalizeContractPosition wurde hier bewusst entfernt — Positions-Filter ist
+// laut Chat raus, da OverTheCap's Positions-Schreibweise nicht zuverlässig genug
+// war.)
+
+// Manche OTC-Team-Felder enthalten mehrere Teams als "ARI/BAL" (Spieler mit
+// mehreren Verträgen/Trades in der Historie) — hier in eine Liste normalisierter
+// Abkürzungen zerlegen, damit der Team-Abgleich jedes Teilstück einzeln prüft.
+function normalizeContractTeams(raw){
+  if(!raw) return [];
+  return raw.split('/').map(part => normalizeContractTeam(part)).filter(Boolean);
+}
+
+// Eigene Proxy-Kette für die GZIP-Binärdatei — dieselbe Reihenfolge/Quellen wie
+// nvProxyUrls() (siehe oben), ABER: allorigins' Standard-Endpunkt /get wickelt
+// die Antwort als JSON-Text ein ({"contents":"..."}) — das würde die Gzip-Bytes
+// zerstören. Deshalb hier /raw statt /get (liefert unveränderte Rohbytes, kein
+// Text/JSON-Unwrapping). Direkter fetch() ohne Proxy scheitert an CORS, da
+// GitHub Release Assets keinen Access-Control-Allow-Origin-Header senden
+// (getestet — weder github.com noch release-assets.githubusercontent.com).
+const gzipProxyUrls = rawUrl => [
+  `${MIM_WORKER}${encodeURIComponent(rawUrl)}`,
+  `https://proxy.corsfix.com/?${rawUrl}`,
+  `https://cors.sh/${rawUrl}`,
+  `https://corsproxy.io/?url=${encodeURIComponent(rawUrl)}`,
+  `https://api.allorigins.win/raw?url=${encodeURIComponent(rawUrl)}`,
+];
+
+async function fetchGzipCsv(url){
+  if(typeof DecompressionStream === 'undefined'){
+    console.warn('[Contracts] DecompressionStream nicht verfügbar in diesem Browser.');
+    return null;
+  }
+  for(const proxyUrl of gzipProxyUrls(url)){
+    try{
+      const ctrl = new AbortController();
+      const timer = setTimeout(()=>ctrl.abort(), 8000); // ~1.2MB Datei — etwas mehr Zeit als bei den kleineren CSV-Fetches
+      const res = await fetch(proxyUrl, { mode:'cors', signal: ctrl.signal });
+      clearTimeout(timer);
+      if(!res.ok){ console.warn(`[Contracts] HTTP ${res.status} @ ${proxyUrl.slice(0,60)}`); continue; }
+      // Manche Public-Proxies fassen Binärdaten als Text an und beschädigen sie dabei —
+      // das führt dann hier zu einem Fehler beim Entpacken, den wir unten abfangen und
+      // als Anlass nehmen, den nächsten Proxy in der Kette zu versuchen.
+      const decompressed = res.body.pipeThrough(new DecompressionStream('gzip'));
+      const text = await new Response(decompressed).text();
+      if(!text || text.length < 200 || !text.includes('player')){
+        console.warn(`[Contracts] Unerwartete/leere Antwort @ ${proxyUrl.slice(0,60)}`);
+        continue;
+      }
+      console.log(`[MIM] Contracts geladen via ${proxyUrl.slice(0,60)} (${text.length} Zeichen)`);
+      return text;
+    }catch(e){
+      console.warn(`[Contracts] Fehler @ ${proxyUrl.slice(0,60)}:`, e.message);
+    }
+  }
+  return null;
+}
+
+function parseContractsCsv(text){
+  const lines = text.split('\n');
+  const H = splitSimpleCsvLine(lines[0]);
+  const idx = {};
+  ['player','position','team','is_active','year_signed','years','value','apy','guaranteed','apy_cap_pct'].forEach(k => idx[k] = H.indexOf(k));
+  const rows = [];
+  for(let i=1;i<lines.length;i++){
+    if(!lines[i].trim()) continue;
+    const c = splitSimpleCsvLine(lines[i]);
+    rows.push({
+      player: c[idx.player],
+      position: c[idx.position],
+      team: c[idx.team],
+      is_active: c[idx.is_active] === 'TRUE' || c[idx.is_active] === 'true',
+      year_signed: parseInt(c[idx.year_signed], 10) || null,
+      years: parseInt(c[idx.years], 10) || null,
+      value: parseFloat(c[idx.value]) || null,
+      apy: parseFloat(c[idx.apy]) || null,
+      guaranteed: parseFloat(c[idx.guaranteed]) || null,
+      apy_cap_pct: parseFloat(c[idx.apy_cap_pct]) || null,
+    });
+  }
+  return rows;
+}
+// Einfacher CSV-Parser (kein escaping-Sonderfall über Anführungszeichen hinaus nötig)
+function splitSimpleCsvLine(line){
+  const out = []; let cur = ''; let inQ = false;
+  for(let i=0;i<line.length;i++){
+    const c = line[i];
+    if(c === '"'){ inQ = !inQ; continue; }
+    if(c === ',' && !inQ){ out.push(cur); cur=''; continue; }
+    cur += c;
+  }
+  out.push(cur);
+  return out.map(s => s.trim());
+}
+
+async function getContractsData(){
+  try{
+    const s = store();
+    const cached = s.getItem(CONTRACTS_CACHE_KEY);
+    if(cached){
+      const parsed = JSON.parse(cached);
+      if(Date.now() - parsed.ts < CONTRACTS_CACHE_TTL) return parsed.rows;
+    }
+  }catch{}
+  const text = await fetchGzipCsv(CONTRACTS_URL);
+  if(!text) return null;
+  const rows = parseContractsCsv(text);
+  try{ store().setItem(CONTRACTS_CACHE_KEY, JSON.stringify({ ts: Date.now(), rows })); }catch(e){
+    console.warn('[Contracts] Konnte nicht in localStorage cachen (evtl. zu groß):', e.message);
+  }
+  return rows;
+}
+
+// Suffixe wie "Jr.", "Sr.", "II", "III", "IV" beim Vergleich ignorieren — kleine
+// Namensabweichungen sind laut Chat zu erwarten (unterschiedliche Schreibweisen
+// zwischen unserer Quelle und OverTheCap).
+function normalizeContractName(raw){
+  return (raw || '')
+    .toLowerCase()
+    .replace(/[.,]/g, '')
+    .replace(/\b(jr|sr|ii|iii|iv|v)\b/g, '')
+    .replace(/[^a-z ]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+// Matching-Reihenfolge (NEU — siehe Chat, Grund: Micah Parsons-Bug): NAME
+// zuerst, Team nur noch zur Disambiguierung bei mehreren Spielern mit
+// demselben Namen (z.B. Byron Young existiert 2x in der Liga-Realität).
+// Team-first ist gescheitert, weil OverTheCap das Team-Feld nach einem Trade
+// NICHT rückwirkend aktualisiert — Parsons steht dort weiterhin als
+// "Cowboys", obwohl er längst bei den Packers ist. Ein reiner Name-Abgleich
+// mit Team nur als Tie-Breaker (statt als Vorfilter) findet solche Verträge
+// trotzdem, ohne bei echten Namensdopplungen komplett zu raten.
+function findPlayerContract(rows, teamAbbr, fullName){
+  if(!rows || !rows.length) return null;
+  const targetTeam = teamAbbr ? teamAbbr.toUpperCase() : null;
+  const targetName = normalizeContractName(fullName);
+
+  const nameMatches = rows.filter(r => normalizeContractName(r.player) === targetName);
+  if(!nameMatches.length) return null;
+  if(nameMatches.length === 1) return nameMatches[0];
+
+  // Mehrdeutig (gleicher Name, mehrere Spieler) — zuerst versuchen, über das
+  // aktuelle Team einzugrenzen (inkl. "ARI/BAL"-Mehrfacheinträgen).
+  if(targetTeam){
+    const teamMatches = nameMatches.filter(r => normalizeContractTeams(r.team).includes(targetTeam));
+    if(teamMatches.length === 1) return teamMatches[0];
+    if(teamMatches.length > 1){
+      const active = teamMatches.find(r => r.is_active);
+      if(active) return active;
+      return teamMatches.sort((a,b) => (b.year_signed||0) - (a.year_signed||0))[0];
+    }
+  }
+
+  // Kein Team-Treffer (typischerweise: Spieler wurde getradet, OTC-Team-Feld
+  // ist veraltet) — auf aktiven Vertrag zurückfallen, sonst neuesten nehmen.
+  // Bei echten Namensdopplungen ohne Team-Treffer ist das ein Best-Effort-Fallback,
+  // keine Garantie — siehe Konsolen-Log in loadContractSection für Transparenz.
+  const active = nameMatches.find(r => r.is_active);
+  if(active) return active;
+  return nameMatches.sort((a,b) => (b.year_signed||0) - (a.year_signed||0))[0];
+}
+
+function fmtMoney(v){
+  if(v == null || isNaN(v)) return '–';
+  return '$' + Math.round(v).toLocaleString('de-DE');
+}
+
+async function loadContractSection(p){
+  const badge = document.getElementById('contract-badge');
+  const wrap = document.getElementById('contract-wrap');
+  try{
+    const rows = await getContractsData();
+    if(!rows){
+      badge.textContent = 'Nicht verfügbar';
+      wrap.innerHTML = '<div class="stats-ph"><p>Vertragsdaten aktuell nicht abrufbar.</p></div>';
+      return;
+    }
+    const contract = findPlayerContract(rows, p.team, p.full_name);
+    if(!contract){
+      badge.textContent = 'Kein Treffer';
+      badge.className = 'sec-badge';
+      wrap.innerHTML = '<div class="stats-ph"><p>Kein passender Vertrag gefunden (kein Name-Treffer in den Contracts-Daten).</p></div>';
+      console.log(`[Contracts] Kein Treffer für ${p.full_name} (Team=${p.team})`);
+      return;
+    }
+    badge.textContent = 'OverTheCap';
+    badge.className = 'sec-badge live';
+    const activeBadge = contract.is_active
+      ? '<span class="contract-active-badge yes">Aktiv</span>'
+      : '<span class="contract-active-badge no">Abgelaufen</span>';
+    wrap.innerHTML = `
+      <div style="margin-bottom:12px;font-size:12px;color:var(--muted);">Unterschrieben ${contract.year_signed || '–'}${activeBadge}</div>
+      <div class="contract-grid">
+        <div class="contract-card"><div class="contract-card-label">Laufzeit</div><div class="contract-card-value">${contract.years ?? '–'} Jahre</div></div>
+        <div class="contract-card"><div class="contract-card-label">Gesamtwert</div><div class="contract-card-value">${fmtMoney(contract.value)}</div></div>
+        <div class="contract-card"><div class="contract-card-label">Ø pro Jahr (APY)</div><div class="contract-card-value">${fmtMoney(contract.apy)}</div></div>
+        <div class="contract-card"><div class="contract-card-label">Garantiert</div><div class="contract-card-value">${fmtMoney(contract.guaranteed)}</div></div>
+        <div class="contract-card"><div class="contract-card-label">% vom Cap (bei Unterschrift)</div><div class="contract-card-value">${contract.apy_cap_pct != null ? (contract.apy_cap_pct*100).toFixed(1)+'%' : '–'}</div></div>
+      </div>
+      <div style="margin-top:10px;font-size:10px;color:var(--muted);">Quelle: OverTheCap.com via nflverse · Name-Abgleich (Team nur zur Disambiguierung bei gleichen Namen), keine Live-Cap-Berechnung</div>
+    `;
+  }catch(e){
+    console.error('[Contracts] Fehler:', e);
+    badge.textContent = 'Fehler';
+    wrap.innerHTML = '<div class="stats-ph"><p>Vertragsdaten konnten nicht geladen werden.</p></div>';
+  }
+}
+
+// Auf-/Zuklappen der Vertrags-Sektion
+document.getElementById('contract-toggle-hdr').addEventListener('click', () => {
+  const body = document.getElementById('contract-body');
+  const chevron = document.getElementById('contract-toggle-chevron');
+  const isOpen = body.style.display !== 'none';
+  body.style.display = isOpen ? 'none' : '';
+  chevron.style.transform = isOpen ? 'rotate(-90deg)' : 'rotate(0deg)';
+});
+
 function idpGroups(r){
   const groups=new Set();
   const tags=(r.fantasy_positions&&r.fantasy_positions.length)?r.fantasy_positions:[r.position];
@@ -1029,6 +1305,7 @@ async function loadPlayer(){
     }catch(e){sub('Error: '+e.message);console.error(e);return;}
   }
   renderPlayer(p);
+  loadContractSection(p); // läuft parallel, blockiert nichts anderes
   // Start league chain + stats loading in parallel, IDs in background
   // enrichIds runs after a short delay so render completes first
   setTimeout(()=>{ enrichIds(p).then(()=>refineInjuryBoxFromNflverse(p)); },200);

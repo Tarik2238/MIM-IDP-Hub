@@ -1,0 +1,16 @@
+{
+  "name": "mim-precompute",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Rechnet Team Stats + Lineup Details zentral vor (GitHub Actions), statt dass jeder Besucher selbst rechnet.",
+  "main": "precompute.js",
+  "scripts": {
+    "precompute": "node precompute.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

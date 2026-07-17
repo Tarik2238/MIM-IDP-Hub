@@ -583,7 +583,7 @@ footer {
       <div class="card-icon-bg">📊</div>
       <div class="card-content">
         <div class="card-title">IDP Rankings</div>
-        <div class="card-desc">Eigene Tier-Rankings per Drag & Drop erstellen. Login erforderlich zum Bearbeiten, für alle sichtbar.</div>
+        <div class="card-desc" id="rankings-card-desc">Eigene Tier-Rankings per Drag & Drop erstellen. Login erforderlich zum Bearbeiten, für alle sichtbar.</div>
         <div class="card-arrow">Rankings öffnen →</div>
       </div>
     </a>
@@ -600,7 +600,7 @@ footer {
       <div class="card-content">
         <div class="card-title">Coaching Tree</div>
         <div class="card-desc">Externe Datenbank — HC/OC/DC-Historie aller NFL-Teams, wer unter wem gearbeitet hat, komplette Karriere-Zeitachsen. Öffnet in neuem Tab.</div>
-        <div class="card-arrow">coaching-tree.app öffnen ↗</div>
+        <div class="card-arrow">Datenbank öffnen ↗</div>
       </div>
     </a>
   </div>
@@ -689,6 +689,9 @@ watchAuth(user => {
   document.getElementById('nav-scouting-link').style.display = user ? '' : 'none';
   document.getElementById('scouting-card').style.display = user ? '' : 'none';
   document.getElementById('coaching-tree-card').style.display = user ? '' : 'none';
+  document.getElementById('rankings-card-desc').textContent = user
+    ? 'Eigene Tier-Rankings per Drag & Drop erstellen und pflegen.'
+    : 'Unsere Tier-Rankings ansehen — von der Crew erstellt und laufend gepflegt.';
   document.getElementById('footer-text').textContent = user
     ? 'MICS IN MOTION · IDP HUB · Nur für internen Gebrauch · Interner-Modus'
     : 'MICS IN MOTION · IDP HUB · Community-Modus';

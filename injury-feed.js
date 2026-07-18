@@ -8,7 +8,12 @@
 const ESPN_TEAM_ID = {ATL:1,BUF:2,CHI:3,CIN:4,CLE:5,DAL:6,DEN:7,DET:8,GB:9,TEN:10,IND:11,KC:12,LV:13,LAR:14,MIA:15,MIN:16,NE:17,NO:18,NYG:19,NYJ:20,PHI:21,ARI:22,PIT:23,LAC:24,SF:25,SEA:26,TB:27,WAS:28,CAR:29,JAX:30,BAL:33,HOU:34};
 
 const SLEEPER_ALL = 'https://api.sleeper.app/v1/players/nfl';
-const SLEEPER_CACHE_KEY = 'mim_sleeper_players_v3', SLEEPER_CACHE_TS = 'mim_sleeper_ts_v3', SLEEPER_CACHE_TTL = 23*60*60*1000;
+// EIGENER Cache-Key (siehe Chat) — NICHT mehr 'mim_sleeper_players_v3' geteilt mit
+// compare.html. Beide schreiben zwar aktuell eine kompatible Form (espn_id ist in
+// beiden enthalten), aber ein geteilter Key zwischen unabhängig gepflegten Dateien
+// ist genau das Muster, das schon einmal zu stillen Formfehlern geführt hat
+// (siehe player.html/players.html-Vorfall) — hier vorsorglich entkoppelt.
+const IDP_ESPN_IDX_CACHE_KEY = 'mim_injury_idp_espn_idx_v1', IDP_ESPN_IDX_CACHE_TS = 'mim_injury_idp_espn_idx_ts_v1', IDP_ESPN_IDX_CACHE_TTL = 23*60*60*1000;
 const FEED_CACHE_KEY = 'mim_injury_feed_v1', FEED_CACHE_TS = 'mim_injury_feed_ts_v1', FEED_CACHE_TTL = 6*60*60*1000;
 
 function store(){ try{ localStorage.setItem('_t','1'); localStorage.removeItem('_t'); return localStorage; }catch{ return sessionStorage; } }
@@ -39,18 +44,21 @@ async function loadIdpEspnIndex(){
   let data;
   try{
     const s = store();
-    const ts = s.getItem(SLEEPER_CACHE_TS);
-    if(ts && Date.now()-parseInt(ts) < SLEEPER_CACHE_TTL){
-      const cached = s.getItem(SLEEPER_CACHE_KEY);
+    const ts = s.getItem(IDP_ESPN_IDX_CACHE_TS);
+    if(ts && Date.now()-parseInt(ts) < IDP_ESPN_IDX_CACHE_TTL){
+      const cached = s.getItem(IDP_ESPN_IDX_CACHE_KEY);
       if(cached){ data = JSON.parse(cached); }
     }
   }catch{}
 
+  // Formprüfung (siehe Chat) — eigener Key, aber sicherheitshalber trotzdem prüfen,
+  // dass die erwarteten Felder da sind, bevor wir blind vertrauen.
+  if(data && data.length && (!('espn_id' in data[0]) || !('positions' in data[0]))) data = null;
+
   let rawPlayers;
   if(data){
-    // Gecachte Liste ist schon auf unser eigenes, schlankes Format vorverarbeitet
-    // (siehe index.html/players.html) — hat also schon positions/espn_id direkt.
     rawPlayers = data;
+    console.log(`[InjuryFeed] IDP-ESPN-Index aus Cache: ${rawPlayers.length} Spieler.`);
   } else {
     const r = await fetch(SLEEPER_ALL);
     const raw = await r.json();
@@ -63,7 +71,8 @@ async function loadIdpEspnIndex(){
         position: groups[0], positions: groups, team: x.team || ''
       };
     }).filter(Boolean);
-    try{ const s = store(); s.setItem(SLEEPER_CACHE_KEY, JSON.stringify(rawPlayers)); s.setItem(SLEEPER_CACHE_TS, Date.now().toString()); }catch{}
+    console.log(`[InjuryFeed] IDP-ESPN-Index frisch von Sleeper geladen: ${rawPlayers.length} Spieler.`);
+    try{ const s = store(); s.setItem(IDP_ESPN_IDX_CACHE_KEY, JSON.stringify(rawPlayers)); s.setItem(IDP_ESPN_IDX_CACHE_TS, Date.now().toString()); }catch{}
   }
 
   const idx = new Map();
@@ -75,6 +84,7 @@ async function loadIdpEspnIndex(){
     if(!positions.some(pos => ['DL','LB','DB'].includes(pos))) return;
     idx.set(String(p.espn_id), p);
   });
+  console.log(`[InjuryFeed] IDP-Index mit espn_id fertig: ${idx.size} von ${rawPlayers.length} Spielern haben eine espn_id.`);
   return idx;
 }
 
@@ -112,6 +122,8 @@ export async function loadInjuryFeed(forceRefresh){
   const teamRefLists = await Promise.all(
     Object.entries(ESPN_TEAM_ID).map(async ([abbr, id]) => ({ abbr, refs: await fetchTeamInjuryRefs(id) }))
   );
+  const totalRefs = teamRefLists.reduce((s,t) => s + t.refs.length, 0);
+  console.log(`[InjuryFeed] ${totalRefs} Injury-Refs über alle ${teamRefLists.length} Teams geladen.`);
 
   const matches = [];
   teamRefLists.forEach(({ abbr, refs }) => {
@@ -122,6 +134,7 @@ export async function loadInjuryFeed(forceRefresh){
       if(player) matches.push({ ref: it.$ref, teamAbbr: abbr, player });
     });
   });
+  console.log(`[InjuryFeed] ${matches.length} Refs matchen einen IDP-Spieler (von ${totalRefs} insgesamt).`);
 
   const details = await Promise.all(matches.map(async m => {
     try{
@@ -139,10 +152,11 @@ export async function loadInjuryFeed(forceRefresh){
         type: (d.details && d.details.type) || '',
         returnDate: (d.details && d.details.returnDate) || ''
       };
-    }catch(e){ return null; }
+    }catch(e){ console.warn('[InjuryFeed] Detail-Fetch fehlgeschlagen für', m.ref, e.message); return null; }
   }));
 
   const feed = details.filter(Boolean).sort((a,b) => new Date(b.date) - new Date(a.date));
+  console.log(`[InjuryFeed] ${feed.length} Einträge im finalen Feed (von ${matches.length} Matches — Differenz = Detail-Fetch fehlgeschlagen oder ohne Datum).`);
 
   try{ localStorage.setItem(FEED_CACHE_KEY, JSON.stringify(feed)); localStorage.setItem(FEED_CACHE_TS, Date.now().toString()); }catch{}
   return feed;

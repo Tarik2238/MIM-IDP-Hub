@@ -126,6 +126,8 @@ nav{background:rgba(13,17,23,.97);backdrop-filter:blur(10px);border-bottom:1px s
 .compare-bar-clear:hover{color:var(--text);}
 
 .pr-right{display:flex;gap:6px;align-items:center;}
+.pr-pts{display:flex;flex-direction:column;align-items:flex-end;line-height:1.15;font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--orange);flex-shrink:0;margin-right:4px;}
+.pr-pts small{font-family:'Inter',sans-serif;font-size:8px;font-weight:600;letter-spacing:.5px;color:var(--muted);text-transform:uppercase;}
 .badge{font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:1px;padding:2px 8px;border-radius:4px;}
 .bp{background:var(--orange-glow);color:var(--orange);border:1px solid var(--orange-dim);}
 .bt{background:rgba(46,160,67,.1);color:var(--green-light);border:1px solid rgba(46,160,67,.2);}
@@ -253,7 +255,7 @@ nav{background:rgba(13,17,23,.97);backdrop-filter:blur(10px);border-bottom:1px s
   <span class="filter-label" style="margin-left:12px">Status</span>
   <button class="fchip active" onclick="setStatus(this,'')">Alle</button>
   <button class="fchip" onclick="setStatus(this,'Active')">Aktiv</button>
-  <button class="fchip" onclick="setStatus(this,'Inactive')">Inaktiv</button>
+  <button class="fchip" onclick="setStatus(this,'FA')">FA</button>
 </div>
 
 <div class="results-wrap">
@@ -366,6 +368,8 @@ const TOP50_CACHE_KEY = `mim_players_top50_v1_${TOP50_SEASON}`, TOP50_CACHE_TS =
 const SL_BULK_SEASON_DIRECT = yr => `https://api.sleeper.com/stats/nfl/${yr}?season_type=regular&position[]=DL&position[]=LB&position[]=DB`;
 const SL_BULK_SEASON_PROXY  = yr => `https://corsproxy.io/?url=${encodeURIComponent(SL_BULK_SEASON_DIRECT(yr))}`;
 let top50ByPos = { DL: [], LB: [], DB: [] }; // sleeper_id-Arrays, schon nach Punkten sortiert & auf 50 gekappt
+let seasonPtsMap = new Map(); // sleeper_id -> Fantasy Points der letzten abgeschlossenen Saison (für die Kartenanzeige)
+const SEASON_PTS_CACHE_KEY = `mim_players_season_pts_v1_${TOP50_SEASON}`, SEASON_PTS_CACHE_TS = `mim_players_season_pts_ts_v1_${TOP50_SEASON}`;
 
 async function fetchBulkSeasonStats(yr){
   for(const url of [SL_BULK_SEASON_DIRECT(yr), SL_BULK_SEASON_PROXY(yr)]){
@@ -383,20 +387,34 @@ async function fetchBulkSeasonStats(yr){
 }
 
 async function loadTop50ByPosition(){
+  // seasonPtsMap zuerst aus dem Cache versuchen (unabhängig vom Top50-Cache,
+  // da wir hier ALLE Spieler mit Punkten brauchen, nicht nur die Top 50)
+  try{
+    const s = getStorage();
+    const ts = s.getItem(SEASON_PTS_CACHE_TS);
+    if(ts && Date.now()-parseInt(ts) < TOP50_CACHE_TTL){
+      const cached = s.getItem(SEASON_PTS_CACHE_KEY);
+      if(cached) seasonPtsMap = new Map(Object.entries(JSON.parse(cached)));
+    }
+  }catch{}
+
+  let top50Cached = false;
   try{
     const s = getStorage();
     const ts = s.getItem(TOP50_CACHE_TS);
     if(ts && Date.now()-parseInt(ts) < TOP50_CACHE_TTL){
       const cached = s.getItem(TOP50_CACHE_KEY);
-      if(cached){ top50ByPos = JSON.parse(cached); return; }
+      if(cached){ top50ByPos = JSON.parse(cached); top50Cached = true; }
     }
   }catch{}
+  if(top50Cached && seasonPtsMap.size) return; // beides schon frisch im Cache — kein Fetch nötig
 
   const entries = await fetchBulkSeasonStats(TOP50_SEASON);
-  if(!entries) return; // Bulk-Endpoint down/geblockt → Top-50-Ansicht bleibt einfach leer, kein Fehlerfall
+  if(!entries) return; // Bulk-Endpoint down/geblockt → Top-50-Ansicht & Punkte-Anzeige bleiben einfach leer, kein Fehlerfall
 
   const playerById = new Map(players.map(p => [p.sleeper_id, p]));
   const scored = { DL: [], LB: [], DB: [] };
+  const ptsObj = {};
   entries.forEach(entry => {
     const pid = entry.player_id != null ? String(entry.player_id) : null;
     if(!pid) return;
@@ -404,18 +422,24 @@ async function loadTop50ByPosition(){
     if(!p) return;
     const stats = entry.stats || entry;
     const pts = calcPts(stats);
+    ptsObj[pid] = pts; // auch 0-Punkte-Spieler mit aufnehmen, damit "0.0" statt "keine Daten" angezeigt wird
     if(pts <= 0) return;
     (p.positions||[p.position]).forEach(pos => {
       if(scored[pos]) scored[pos].push({ id: pid, pts });
     });
   });
+  seasonPtsMap = new Map(Object.entries(ptsObj));
 
   ['DL','LB','DB'].forEach(pos => {
     scored[pos].sort((a,b) => b.pts - a.pts);
     top50ByPos[pos] = scored[pos].slice(0, 50).map(x => x.id);
   });
 
-  try{ const s = getStorage(); s.setItem(TOP50_CACHE_KEY, JSON.stringify(top50ByPos)); s.setItem(TOP50_CACHE_TS, Date.now().toString()); }catch{}
+  try{
+    const s = getStorage();
+    s.setItem(TOP50_CACHE_KEY, JSON.stringify(top50ByPos)); s.setItem(TOP50_CACHE_TS, Date.now().toString());
+    s.setItem(SEASON_PTS_CACHE_KEY, JSON.stringify(ptsObj)); s.setItem(SEASON_PTS_CACHE_TS, Date.now().toString());
+  }catch{}
 }
 
 // ── CACHE ── (localStorage with sessionStorage fallback)
@@ -602,7 +626,7 @@ async function init() {
     setTimeout(() => document.getElementById('init-overlay').classList.add('done'), 200);
     document.getElementById('search-hint').textContent =
       `${players.length.toLocaleString()} IDP-Spieler bereit · aus Cache`;
-    loadTop50ByPosition().then(() => { if(searchQ.length < 3 && activePos) renderResults(); });
+    loadTop50ByPosition().then(() => { renderResults(); }); // immer neu rendern (nicht nur Top50-Ansicht), damit Punkte auch bei aktiver Suche nachträglich erscheinen
     return;
   }
 
@@ -677,7 +701,7 @@ async function init() {
     setTimeout(() => document.getElementById('init-overlay').classList.add('done'), 300);
     document.getElementById('search-hint').textContent =
       `${players.length.toLocaleString()} IDP-Spieler · DL, LB, DB`;
-    loadTop50ByPosition().then(() => { if(searchQ.length < 3 && activePos) renderResults(); });
+    loadTop50ByPosition().then(() => { renderResults(); }); // immer neu rendern (nicht nur Top50-Ansicht), damit Punkte auch bei aktiver Suche nachträglich erscheinen
 
   } catch(e) {
     sub.textContent = `Fehler: ${e.message}`;
@@ -707,7 +731,7 @@ function setStatus(el, status) {
   });
   // simpler: just toggle active on status chips
   el.parentElement.querySelectorAll('.fchip').forEach(c => {
-    if (['All','Active','Inactive'].includes(c.textContent)) c.classList.remove('active');
+    if (['All','Active','FA'].includes(c.textContent)) c.classList.remove('active');
   });
   el.classList.add('active');
   renderResults();
@@ -726,7 +750,7 @@ function renderResults() {
       const ids = new Set(top50ByPos[activePos]);
       let topResults = players.filter(p => ids.has(p.sleeper_id));
       if (activeStatus === 'Active') topResults = topResults.filter(p => p.status === 'Active');
-      if (activeStatus === 'Inactive') topResults = topResults.filter(p => p.status !== 'Active');
+      if (activeStatus === 'FA') topResults = topResults.filter(p => !p.team);
       topResults.sort((a,b) => (a.full_name||'').localeCompare(b.full_name||''));
 
       header.style.display = 'flex';
@@ -751,7 +775,7 @@ function renderResults() {
     if (!(p.search_name||'').includes(q) && !(p.full_name||'').toLowerCase().includes(q)) return false;
     if (activePos && !(p.positions||[p.position]).includes(activePos)) return false;
     if (activeStatus === 'Active' && p.status !== 'Active') return false;
-    if (activeStatus === 'Inactive' && p.status === 'Active') return false;
+    if (activeStatus === 'FA' && p.team) return false;
     return true;
   });
 
@@ -808,7 +832,17 @@ function playerRow(p) {
   const posDisp = (p.positions && p.positions.length) ? p.positions.join('/') : p.position;
   const exp = p.years_exp !== '' ? `${p.years_exp}Y exp` : '';
   const college = p.college && p.college !== 'null' ? p.college : '';
+  const age = p.age ? `${p.age} J.` : '';
+  const height = p.height || '';
+  const weight = p.weight ? `${p.weight} lbs` : '';
   const checked = compareIds.has(p.sleeper_id) ? 'checked' : '';
+
+  // Fantasy Points der letzten abgeschlossenen Saison (aus dem Bulk-Fetch,
+  // siehe loadTop50ByPosition) — steht links neben den Positions-/Team-Badges.
+  const pts = seasonPtsMap.get(p.sleeper_id);
+  const ptsDisp = pts != null
+    ? `<span class="pr-pts" title="Fantasy Points ${TOP50_SEASON}">${pts.toFixed(1)}<small>PTS ${TOP50_SEASON}</small></span>`
+    : '';
 
   return `
   <div class="player-row">
@@ -821,8 +855,12 @@ function playerRow(p) {
         <div class="pr-sub">
           ${exp ? `<span>${exp}</span>` : ''}
           ${college ? `<span>${college}</span>` : ''}
+          ${age ? `<span>${age}</span>` : ''}
+          ${height ? `<span>${height}</span>` : ''}
+          ${weight ? `<span>${weight}</span>` : ''}
         </div>
       </div>
+      ${ptsDisp}
       <div class="pr-right">
         <span class="badge bp">${posDisp}</span>
         <span class="badge ${teamClass}">${teamDisp}</span>

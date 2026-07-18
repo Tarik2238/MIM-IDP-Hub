@@ -123,7 +123,7 @@ nav {
 /* CARDS */
 .cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 16px;
   max-width: 1240px;
   width: 100%;
@@ -296,6 +296,9 @@ footer {
 .modal-pane { display: none; }
 .modal-pane.active { display: block; }
 
+@media(max-width:900px){
+  .cards { grid-template-columns: repeat(2, 1fr); }
+}
 @media(max-width:700px){
   nav { padding: 0 20px; }
   .hero { padding: 60px 20px 40px; }

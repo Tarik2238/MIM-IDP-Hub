@@ -684,13 +684,22 @@ async function computeLineupDataForSeason(year, onProgress){
 
 // ══════════════════════════════════════════════════════════════════════════
 // MATCHUP-ANALYSE — welche Teams sind für DL/LB/DB gerade eine "leichte"
-// Matchup? Jede einzelne Aktion (Sack/TFL/QB-Hit/Tackle/INT/PBU) wird über
-// Sleepers eigene fantasy_positions-Tags (DL/LB/DB, siehe
-// buildGsisToGroupViaSleeper) der exakten Position des AUSFÜHRENDEN Spielers
-// zugeordnet — bewusst NICHT dieselbe PFF-Kette wie Lineup Details (siehe
-// Chat: PFF liefert für viele Spieler keine Daten, dessen OLB→ED-Fallback hat
-// echte Off-Ball-Linebacker fälschlich zu DL gezählt). Play-by-Play-Auswertung
-// und Lineup Details selbst bleiben davon komplett unberührt.
+// Matchup? WICHTIG (siehe Chat): NICHT über Play-by-Play berechnet (das bleibt
+// exklusiv für Team Stats/Lineup Details, hier unangetastet) — stattdessen
+// direkt über Sleepers fertige WÖCHENTLICHE Spieler-Stats, dieselbe
+// Datenquelle, die die App auch für die Season-Fantasy-Punkte nutzt
+// (players.html/compare.html). Für jede Woche EIN Bulk-Call, der die Stats
+// ALLER DL/LB/DB-Spieler dieser Woche zurückgibt — kein CSV-Parsing, keine
+// GSIS-ID-Zuordnung, keine PFF-Abhängigkeit nötig.
+//
+// Positions-Klassifikation: Sleepers eigene fantasy_positions-Tags (DL/LB/DB),
+// dieselbe Konvention wie players.html/compare.html — jeder Spieler hat dort
+// einen eindeutigen Tag, kein OLB-Rätselraten wie bei PFFs Fallback nötig.
+//
+// Team-Zuordnung: der Spieler steht in seiner Wochen-Stat-Zeile mit seinem
+// EIGENEN Team; über den Spielplan (Sleeper Schedule API) wird der GEGNER
+// dieser Woche ermittelt — DIESES Gegner-Team bekommt die Vulnerability gut-
+// geschrieben (der Spieler verteidigt ja GEGEN dessen Offense).
 //
 // WICHTIG (siehe Chat): bewusst ALLE 6 Metriken für ALLE 3 Gruppen erfasst,
 // nicht nur die "klassische" Zuordnung (Sacks nur DL, INT nur DB etc.) — ein
@@ -704,7 +713,7 @@ async function computeLineupDataForSeason(year, onProgress){
 // jede mögliche Fenstergröße ein eigener Snapshot vorgehalten werden muss.
 // ══════════════════════════════════════════════════════════════════════════
 
-const MATCHUP_MIN_YEAR = MIN_YEAR; // hängt nur an PBP-Daten, nicht an den erst nach Saisonende verfügbaren participation-Daten — anders als Lineup Details also auch WÄHREND der laufenden Saison nutzbar
+const MATCHUP_MIN_YEAR = MIN_YEAR; // hängt nur an Sleepers Stats-Endpoint, nicht an den erst nach Saisonende verfügbaren participation-Daten — anders als Lineup Details also auch WÄHREND der laufenden Saison nutzbar
 
 function emptyMatchupBucketStats(){
   return { sacks:0, tfl:0, qbHits:0, tackles:0, ints:0, pbu:0 };
@@ -716,10 +725,6 @@ function emptyMatchupGroupStats(){
 // bewusst NICHT die PFF-Kette von Lineup Details (buildGsisToBucketMapForSeason)
 // mitbenutzt, sondern direkt Sleepers eigene fantasy_positions-Tags — dieselbe
 // Konvention wie auf players.html/compare.html (DL/LB/DB, 3-Wege statt 5-Wege).
-// Grund: PFF liefert für viele Spieler keine Daten (Fallback musste bei 511
-// Spielern greifen), und dessen OLB→ED-Fallback-Heuristik hat echte Off-Ball-
-// Linebacker (z.B. Buffalos Matt Milano) fälschlich in den DL-Topf geworfen.
-// Sleepers Tags sind pro Spieler eindeutig und brauchen keinen Fallback.
 const MATCHUP_DL_SET = new Set(['DE','DT','NT','EDGE','IDL','DL']);
 const MATCHUP_LB_SET = new Set(['LB','ILB','MLB','OLB']);
 const MATCHUP_DB_SET = new Set(['CB','FS','SS','S','DB','SAF']);
@@ -736,76 +741,64 @@ function classifyMatchupPlayer(x){
   return classifyMatchupTag(x.depth_chart_position);
 }
 
-// Baut gsis_id -> 'DL'|'LB'|'DB' EINMAL direkt aus Sleepers kompletter
+// Baut sleeper_id -> 'DL'|'LB'|'DB' EINMAL direkt aus Sleepers kompletter
 // Spielerliste (ein einziger Fetch, kein Proxy nötig — Sleepers API ist von
 // GitHub Actions aus direkt erreichbar, kein CORS-Problem serverseitig).
-async function buildGsisToGroupViaSleeper(onProgress){
-  onProgress && onProgress(50, 'Lade Sleeper-Spielerliste für Matchup-Positionen…');
+async function buildSleeperIdToGroup(onProgress){
+  onProgress && onProgress(10, 'Lade Sleeper-Spielerliste für Matchup-Positionen…');
   const map = new Map();
   try{
     const res = await fetch('https://api.sleeper.app/v1/players/nfl');
     if(!res.ok){ console.warn('[Matchups] Sleeper-Spielerliste: HTTP', res.status); return map; }
     const data = await res.json();
-    Object.values(data).forEach(x => {
-      if(!x || !x.gsis_id) return;
+    Object.entries(data).forEach(([id, x]) => {
+      if(!x) return;
       const group = classifyMatchupPlayer(x);
-      if(group) map.set(x.gsis_id, group);
+      if(group) map.set(id, group);
     });
   }catch(e){ console.warn('[Matchups] Sleeper-Spielerliste konnte nicht geladen werden:', e.message); }
   return map;
 }
 
-// Spalten, die in derselben PBP-Zeile MEHRFACH für dieselbe Metrik auftreten
-// können (z.B. 2 TFL-Spieler an einem Play) — jede Spalte zählt einen eigenen
-// Vorkommen, das ist beabsichtigt (2 beteiligte Spieler = 2 Gutschriften).
-// Halbe Sacks (2 Spieler teilen sich einen Sack) bekommen bewusst 0.5 Gewicht,
-// damit die Summe über beide Spieler weiterhin genau 1 Sack ergibt.
-const MATCHUP_CREDIT_COLUMNS = [
-  ['sack_player_id', 'sacks', 1],
-  ['half_sack_1_player_id', 'sacks', 0.5],
-  ['half_sack_2_player_id', 'sacks', 0.5],
-  ['tackle_for_loss_1_player_id', 'tfl', 1],
-  ['tackle_for_loss_2_player_id', 'tfl', 1],
-  ['qb_hit_1_player_id', 'qbHits', 1],
-  ['qb_hit_2_player_id', 'qbHits', 1],
-  ['solo_tackle_1_player_id', 'tackles', 1],
-  ['solo_tackle_2_player_id', 'tackles', 1],
-  ['assist_tackle_1_player_id', 'tackles', 1],
-  ['assist_tackle_2_player_id', 'tackles', 1],
-  ['assist_tackle_3_player_id', 'tackles', 1],
-  ['assist_tackle_4_player_id', 'tackles', 1],
-  ['tackle_with_assist_1_player_id', 'tackles', 1],
-  ['tackle_with_assist_2_player_id', 'tackles', 1],
-  ['interception_player_id', 'ints', 1],
-  ['lateral_interception_player_id', 'ints', 1],
-  ['pass_defense_1_player_id', 'pbu', 1],
-  ['pass_defense_2_player_id', 'pbu', 1],
-];
+// Spielplan (team -> week -> {opp, home}) — identisch zum Muster aus
+// player.html/matchups.html (Sleeper Schedule API, EIN Call für die komplette
+// Saison), hier serverseitig nochmal separat, da precompute.js kein Browser-
+// Modul importieren kann.
+async function fetchScheduleMapForMatchups(year){
+  const map = {};
+  try{
+    const res = await fetch(`https://api.sleeper.app/schedule/nfl/regular/${year}`);
+    if(!res.ok){ console.warn('[Matchups] Spielplan: HTTP', res.status); return map; }
+    const raw = await res.json();
+    const games = Array.isArray(raw) ? raw : Object.values(raw || {});
+    games.forEach(g => {
+      const home = g.home || g.home_team, away = g.away || g.away_team, wk = g.week;
+      if(!home || !away || !wk) return;
+      if(!map[home]) map[home] = {};
+      if(!map[away]) map[away] = {};
+      map[home][wk] = { opp: away, home: true };
+      map[away][wk] = { opp: home, home: false };
+    });
+  }catch(e){ console.warn('[Matchups] Spielplan konnte nicht geladen werden:', e.message); }
+  return map;
+}
+
+function getMatchupStatVal(stats, key){
+  const v = stats ? stats[key] : null;
+  const n = (v != null) ? parseFloat(v) : NaN;
+  return isNaN(n) ? 0 : n;
+}
 
 async function computeMatchupDataForSeason(year, onProgress){
-  const gsisToGroup = await buildGsisToGroupViaSleeper(onProgress);
-
-  onProgress && onProgress(55, 'Lade Play-by-Play-Daten für Matchup-Analyse…');
-  const pbpText = await fetchPbpCsv(year); // teilt sich den Cache mit TeamStats, falls schon geladen
-  if(!pbpText) return null;
-
-  onProgress && onProgress(65, 'Werte Matchup-Statistiken aus…');
-  const lines = pbpText.split('\n');
-  const H = parseCsvLine(lines[0]).map(h => h.trim());
-  // WICHTIG (Bugfix, siehe Chat): wir indizieren nach POSTEAM (Team am Ball),
-  // nicht nach defteam! Wir wollen messen, wie ANFÄLLIG die OFFENSE eines Teams
-  // für gegnerische IDP-Spieler ist ("Team X hat viele Tackles zugelassen") —
-  // nicht, wie produktiv das Team mit der EIGENEN Defense ist. Der Spieler, der
-  // den Sack/Tackle/etc. macht, ist ohnehin immer der Gegner von posteam, das
-  // ändert sich nicht.
-  const idx = { week: H.indexOf('week'), posteam: H.indexOf('posteam') };
-  MATCHUP_CREDIT_COLUMNS.forEach(([col]) => { idx[col] = H.indexOf(col); });
-  if(idx.week < 0 || idx.posteam < 0){
-    console.warn('[Matchups] Erwartete Spalten (week/posteam) in PBP-CSV nicht gefunden.');
+  const [sleeperIdToGroup, scheduleMap] = await Promise.all([
+    buildSleeperIdToGroup(onProgress),
+    fetchScheduleMapForMatchups(year),
+  ]);
+  if(!sleeperIdToGroup.size){
+    console.warn('[Matchups] Keine Sleeper-Positionsdaten verfügbar — abgebrochen.');
     return null;
   }
 
-  const normalizeAbbr = t => t === 'LA' ? 'LAR' : t; // siehe Chat — nflverse führt die Rams als "LA"
   const teams = {}; // abbr -> { weeks: { [woche]: {DL:{...},LB:{...},DB:{...}} } }
   function ensureWeek(abbr, wk){
     if(!teams[abbr]) teams[abbr] = { weeks: {} };
@@ -813,26 +806,48 @@ async function computeMatchupDataForSeason(year, onProgress){
     return teams[abbr].weeks[wk];
   }
 
-  for(let i=1;i<lines.length;i++){
-    if(!lines[i].trim()) continue;
-    const row = parseCsvLine(lines[i]);
-    const wk = parseInt(row[idx.week], 10);
-    if(!wk || wk > 18) continue; // nur reguläre Saison (Woche 1-18), wie bei Lineup Details/TeamStats
-    const posAbbr = idx.posteam >= 0 ? normalizeAbbr(row[idx.posteam]) : null;
-    if(!posAbbr) continue;
+  let anyWeekLoaded = false;
+  for(let wk = 1; wk <= 18; wk++){
+    onProgress && onProgress(15 + Math.round(wk/18*80), `Lade Wochen-Stats (${wk}/18)…`);
+    const url = `https://api.sleeper.com/stats/nfl/${year}/${wk}?season_type=regular&position[]=DL&position[]=LB&position[]=DB`;
+    let entries = null;
+    try{
+      const res = await fetch(url);
+      if(res.ok){
+        const raw = await res.json();
+        entries = Array.isArray(raw) ? raw : Object.values(raw || {});
+      } else {
+        console.warn(`[Matchups] Woche ${wk}: HTTP ${res.status}`);
+      }
+    }catch(e){ console.warn(`[Matchups] Woche ${wk} konnte nicht geladen werden:`, e.message); }
+    if(!entries || !entries.length) continue;
+    anyWeekLoaded = true;
 
-    const weekStats = ensureWeek(posAbbr, wk);
-    for(const [col, metric, weight] of MATCHUP_CREDIT_COLUMNS){
-      const colIdx = idx[col];
-      if(colIdx < 0) continue;
-      const gid = row[colIdx];
-      if(!gid) continue;
-      const group = gsisToGroup.get(gid);
-      if(!group) continue;
-      weekStats[group][metric] += weight;
-    }
+    entries.forEach(entry => {
+      const pid = entry.player_id != null ? String(entry.player_id) : null;
+      if(!pid) return;
+      const group = sleeperIdToGroup.get(pid);
+      if(!group) return;
+      const stats = entry.stats || entry;
+      const teamAbbr = entry.team || stats.team;
+      if(!teamAbbr) return;
+      const schedEntry = scheduleMap[teamAbbr] && scheduleMap[teamAbbr][wk];
+      const oppAbbr = schedEntry ? schedEntry.opp : null;
+      if(!oppAbbr) return; // Bye-Week oder kein Spielplan-Eintrag — überspringen
 
-    if(i % 8000 === 0) onProgress && onProgress(65 + Math.round(i/lines.length*30), 'Werte Matchup-Statistiken aus…');
+      const weekStats = ensureWeek(oppAbbr, wk); // Gegner-Team bekommt die Vulnerability gutgeschrieben
+      weekStats[group].sacks   += getMatchupStatVal(stats, 'idp_sack');
+      weekStats[group].tfl     += getMatchupStatVal(stats, 'idp_tkl_loss');
+      weekStats[group].qbHits  += getMatchupStatVal(stats, 'idp_qb_hit');
+      weekStats[group].tackles += getMatchupStatVal(stats, 'idp_tkl_solo') + getMatchupStatVal(stats, 'idp_tkl_ast');
+      weekStats[group].ints    += getMatchupStatVal(stats, 'idp_int');
+      weekStats[group].pbu     += getMatchupStatVal(stats, 'idp_pass_def');
+    });
+  }
+
+  if(!anyWeekLoaded){
+    console.warn('[Matchups] Keine einzige Woche konnte geladen werden.');
+    return null;
   }
 
   onProgress && onProgress(100, 'Fertig.');

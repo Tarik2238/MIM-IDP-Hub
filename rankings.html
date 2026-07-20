@@ -96,37 +96,48 @@ nav{background:rgba(13,17,23,.97);backdrop-filter:blur(12px);border-bottom:1px s
 .ov-legend-avatar-fb{background:var(--orange);color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:10px;}
 
 /* ── KONSENS-LISTE (scrollbare Rangliste, siehe Chat) ── */
-.ov-list-wrap{max-width:1100px;margin:0 auto;padding:0 32px 40px;}
-.ov-list-hdr{display:grid;grid-template-columns:44px 44px 1fr 60px 56px 56px 56px 56px 70px 32px;gap:10px;align-items:center;padding:10px 14px;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border2);position:sticky;top:0;background:var(--bg);z-index:5;}
+.ov-list-wrap{max-width:1000px;margin:0 auto;padding:0 32px 40px;}
+.ov-list-hdr{display:grid;grid-template-columns:44px 40px 1fr 56px 56px 56px 64px 64px 32px;gap:10px;align-items:center;padding:10px 14px;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border2);position:sticky;top:0;background:var(--bg);z-index:5;}
 .ov-list-hdr span{text-align:center;}
 .ov-list-hdr span:nth-child(3){text-align:left;}
 .ov-tier-bar{padding:8px 14px;font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:1.5px;color:#fff;background:var(--bg3);border-radius:6px;margin:14px 0 6px;}
-.ov-list-row{display:grid;grid-template-columns:44px 44px 1fr 60px 56px 56px 56px 56px 70px 32px;gap:10px;align-items:center;padding:9px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s;}
+.ov-list-row{display:grid;grid-template-columns:44px 40px 1fr 56px 56px 56px 64px 64px 32px;gap:10px;align-items:center;padding:9px 14px;border-bottom:1px solid var(--border);}
 .ov-list-row:hover{background:var(--bg2);}
 .ov-list-rk{text-align:center;font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--muted2);}
-.ov-list-hs,.ov-list-hs-fb{width:32px;height:32px;border-radius:6px;object-fit:cover;object-position:top;background:var(--bg3);}
+.ov-list-hs,.ov-list-hs-fb{width:32px;height:32px;border-radius:6px;object-fit:cover;object-position:top;background:var(--bg3);cursor:pointer;}
 .ov-list-hs-fb{display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:11px;color:var(--muted);}
-.ov-list-name-wrap{min-width:0;}
+.ov-list-name-wrap{min-width:0;cursor:pointer;}
 .ov-list-name{font-weight:700;color:#fff;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.ov-list-sub{font-size:10px;color:var(--muted);margin-top:1px;}
+.ov-list-sub{font-size:10px;color:var(--muted);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .ov-list-cell{text-align:center;font-size:12px;color:var(--text);}
 .ov-list-cell.best{color:var(--green-light);}
 .ov-list-cell.worst{color:#e0464a;}
 .ov-list-cell.avg{font-weight:700;color:var(--orange);}
-.ov-list-warn{color:var(--orange);font-weight:700;font-size:9px;display:block;}
-.ov-list-chevron{text-align:center;color:var(--muted);font-size:11px;transition:transform .2s;}
-.ov-list-row.open .ov-list-chevron{transform:rotate(180deg);}
-.ov-list-detail{display:none;grid-column:1/-1;padding:10px 14px 14px 108px;background:var(--bg2);border-bottom:1px solid var(--border);}
-.ov-list-row.open + .ov-list-detail{display:block;}
-.ov-detail-tags{display:flex;flex-wrap:wrap;gap:8px;}
-.ov-detail-tag{display:flex;align-items:center;gap:6px;font-size:11px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:4px 9px;}
-.ov-detail-tag.none{color:var(--muted);font-style:italic;}
-.ov-detail-num{font-size:9px;font-weight:700;background:var(--bg4);border-radius:3px;padding:0 4px;color:var(--muted2);}
-.ov-detail-rank{font-weight:700;color:var(--text);}
-.ov-detail-tier{color:var(--muted);}
+.ov-list-chevron-btn{background:none;border:none;color:var(--muted);font-size:13px;cursor:pointer;padding:6px;transition:color .15s;}
+.ov-list-chevron-btn:hover{color:var(--orange);}
+.ov-list-row.active .ov-list-chevron-btn{color:var(--orange);}
+
+/* ── SEITEN-DRAWER (Rater-Detail rechts ausklappbar, siehe Chat) ── */
+.ov-drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:199;display:none;}
+.ov-drawer-overlay.open{display:block;}
+.ov-side-drawer{position:fixed;top:0;right:-340px;width:320px;max-width:88vw;height:100vh;background:var(--bg2);border-left:1px solid var(--border2);box-shadow:-10px 0 28px rgba(0,0,0,.45);z-index:200;transition:right .25s ease;overflow-y:auto;padding:22px;}
+.ov-side-drawer.open{right:0;}
+.ov-drawer-hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;gap:10px;}
+.ov-drawer-title{font-family:'Bebas Neue',sans-serif;font-size:20px;color:#fff;letter-spacing:.5px;}
+.ov-drawer-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+.ov-drawer-close{background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;line-height:1;flex-shrink:0;}
+.ov-drawer-close:hover{color:#fff;}
+.ov-drawer-list{display:flex;flex-direction:column;gap:10px;}
+.ov-drawer-item{display:flex;align-items:center;gap:12px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:10px 12px;}
+.ov-drawer-item.none{opacity:.4;}
+.ov-drawer-avatar,.ov-drawer-avatar-fb{width:38px;height:38px;border-radius:8px;object-fit:cover;flex-shrink:0;}
+.ov-drawer-avatar-fb{background:var(--orange);color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:14px;}
+.ov-drawer-info{min-width:0;}
+.ov-drawer-name{font-size:12px;font-weight:600;color:var(--text);}
+.ov-drawer-stats{font-size:13px;color:var(--muted2);margin-top:2px;}
+.ov-drawer-stats b{color:#fff;}
 @media(max-width:900px){
-  .ov-list-hdr,.ov-list-row{grid-template-columns:32px 32px 1fr 44px 44px 44px 44px 44px 50px 24px;gap:6px;padding:8px 10px;}
-  .ov-list-detail{padding:10px 10px 14px 74px;}
+  .ov-list-hdr,.ov-list-row{grid-template-columns:32px 32px 1fr 44px 44px 44px 50px 50px 24px;gap:6px;padding:8px 10px;}
 }
 .avatar-item .avatar-tip{position:absolute;bottom:-20px;left:50%;transform:translateX(-50%);font-size:9px;color:var(--muted);white-space:nowrap;opacity:0;transition:opacity .15s;pointer-events:none;}
 .avatar-item:hover .avatar-tip,.avatar-item.active .avatar-tip{opacity:1;}
@@ -328,6 +339,18 @@ nav{background:rgba(13,17,23,.97);backdrop-filter:blur(12px);border-bottom:1px s
   </div>
   <div class="search-hint" id="search-hint">Melde dich an, um dein eigenes Ranking zu bearbeiten.</div>
   <div id="ranking-updated-at" style="position:absolute;top:16px;right:32px;font-size:11px;color:var(--muted);"></div>
+</div>
+
+<div class="ov-drawer-overlay" id="ov-drawer-overlay"></div>
+<div class="ov-side-drawer" id="ov-side-drawer">
+  <div class="ov-drawer-hdr">
+    <div>
+      <div class="ov-drawer-title" id="ov-drawer-title">–</div>
+      <div class="ov-drawer-sub" id="ov-drawer-sub"></div>
+    </div>
+    <button class="ov-drawer-close" id="ov-drawer-close">&times;</button>
+  </div>
+  <div class="ov-drawer-list" id="ov-drawer-list"></div>
 </div>
 
 <div class="board-wrap" id="board-wrap">
@@ -1166,15 +1189,16 @@ function switchToOverview(){
   });
 }
 
-// Errechnet pro Spieler die tatsächliche RANG-POSITION in JEDEM persönlichen
-// Ranking (Tiers t1..t7 hintereinandergehängt, Position = fortlaufender Index),
-// und daraus BEST/WORST/AVG/STD.DEV über alle Rater — genau wie in der
-// gewünschten Rangliste (siehe Chat, Bild 2). Tier bleibt zusätzlich als grobe
-// Gruppierung erhalten (Durchschnitt der einzelnen Tier-Zuordnungen, gerundet),
-// nur für die farbigen Tier-Balken zwischen den Zeilen — die Zahlen-Spalten
-// selbst basieren NICHT mehr auf Tier+Bruchteil, sondern auf echten Rängen.
+// Kombiniert beide Ansätze (siehe Chat): Sortierung/Tier-Gruppierung läuft wieder
+// über die BEWÄHRTE alte Methode (Tier + Bruchteilsposition innerhalb des Tiers,
+// über alle Rater gemittelt, dann abgerundet) — das garantiert saubere, monotone
+// Tier-Blöcke in der Liste, im Gegensatz zur rein rang-basierten Sortierung von
+// vorhin, die zu verstreuten/wiederholten Tier-Balken geführt hat. BEST/WORST/AVG/
+// STD.DEV werden ZUSÄTZLICH aus den echten Rang-Positionen berechnet (intuitive
+// kleine Zahlen) und rein informativ mit angezeigt, beeinflussen aber weder
+// Sortierung noch Tier-Zuordnung.
 function computeOverview(){
-  const playerAgg = {}; // sleeper_id -> { records: [{userId, rank, tier}] }
+  const playerAgg = {}; // sleeper_id -> { records: [{userId, tier, rank, value}] }
   allRankings.forEach(u => {
     const doc = overviewDocs[u.id];
     const posBoard = doc && doc.boards && doc.boards[currentPositionTag];
@@ -1183,28 +1207,31 @@ function computeOverview(){
     TIERS.filter(t => t !== 'inbox').forEach(tierKey => {
       const tierNum = parseInt(tierKey.slice(1), 10);
       const arr = posBoard[tierKey] || [];
-      arr.forEach(pid => {
+      const size = arr.length;
+      arr.forEach((pid, i) => {
         rank += 1;
+        const rankInTier = i + 1;
+        const value = tierNum + (rankInTier / (size + 1)) * 0.9; // altbewährte Formel, bleibt strikt innerhalb [tierNum, tierNum+0.9]
         if(!playerAgg[pid]) playerAgg[pid] = { records: [] };
-        playerAgg[pid].records.push({ userId: u.id, rank, tier: tierNum });
+        playerAgg[pid].records.push({ userId: u.id, tier: tierNum, rank, value });
       });
     });
   });
 
   const results = Object.entries(playerAgg).map(([pid, agg]) => {
     const ranks = agg.records.map(r => r.rank);
-    const tiers = agg.records.map(r => r.tier);
+    const values = agg.records.map(r => r.value);
     const n = ranks.length;
     const best = Math.min(...ranks);
     const worst = Math.max(...ranks);
     const avg = ranks.reduce((s,r) => s+r, 0) / n;
     const variance = ranks.reduce((s,r) => s + (r-avg)*(r-avg), 0) / n;
     const stdDev = Math.sqrt(variance);
-    const avgTier = tiers.reduce((s,t) => s+t, 0) / n;
-    const consensusTier = Math.max(1, Math.min(7, Math.round(avgTier)));
-    return { pid, best, worst, avg, stdDev, consensusTier, raterCount: n, records: agg.records };
+    const avgValue = values.reduce((s,v) => s+v, 0) / n;
+    const consensusTier = Math.max(1, Math.min(7, Math.floor(avgValue)));
+    return { pid, best, worst, avg, stdDev, avgValue, consensusTier, raterCount: n, records: agg.records };
   });
-  results.sort((a,b) => a.avg - b.avg || b.raterCount - a.raterCount || a.best - b.best);
+  results.sort((a,b) => a.avgValue - b.avgValue || b.raterCount - a.raterCount);
   return results;
 }
 
@@ -1221,16 +1248,21 @@ function renderOverviewBoard(){
   const results = computeOverview();
   const totalRaters = allRankings.length;
 
-  // Legende einmal oben: Nummer ↔ Nutzer, in EXAKT derselben Reihenfolge wie die
-  // nummerierten Tags im aufklappbaren Detailbereich jeder Zeile.
+  // Legende einmal oben: Nummer ↔ Nutzer (nur noch zur groben Orientierung —
+  // der Seiten-Drawer zeigt pro Spieler zusätzlich direkt die Logos).
   const legendHtml = `<div class="ov-legend">
     <span class="ov-legend-label">Rater</span>
     ${allRankings.map((u,i) => `<span class="ov-legend-item"><span class="ov-legend-num">${i+1}</span>${avatarChipHtml(u)}${u.displayName||'Unbenannt'}</span>`).join('')}
   </div>`;
 
   const headerHtml = `<div class="ov-list-hdr">
-    <span>RK</span><span></span><span>Spieler</span><span>Pos</span>
-    <span>Best</span><span>Worst</span><span>Avg</span><span>Std.Dev</span><span>Rater</span><span></span>
+    <span>RK</span><span></span><span>Spieler</span>
+    <span title="Niedrigster (bester) Rang, den ein einzelner Rater vergeben hat">Best</span>
+    <span title="Höchster (schlechtester) Rang, den ein einzelner Rater vergeben hat">Worst</span>
+    <span title="Durchschnittlicher Rang über alle Rater, die diesen Spieler bewertet haben">Avg</span>
+    <span title="Standardabweichung — wie einig sich die Rater sind (niedrig = Einigkeit, hoch = Uneinigkeit)">Std.Dev</span>
+    <span title="Wie viele der Rater diesen Spieler überhaupt in ihr Ranking aufgenommen haben">Rater</span>
+    <span></span>
   </div>`;
 
   let rowsHtml = '';
@@ -1243,51 +1275,91 @@ function renderOverviewBoard(){
       lastTier = r.consensusTier;
     }
     const initials = (p.full_name||'??').split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
-    const warn = r.raterCount < totalRaters ? `<span class="ov-list-warn">nur ${r.raterCount}/${totalRaters}</span>` : '';
-    const detailTags = allRankings.map((u,i) => {
-      const rec = r.records.find(x => x.userId === u.id);
-      return `<span class="ov-detail-tag${rec?'':' none'}" title="${u.displayName||''}">
-        <span class="ov-detail-num">${i+1}</span>
-        ${rec ? `<span class="ov-detail-rank">#${rec.rank}</span><span class="ov-detail-tier">T${rec.tier}</span>` : '<span>–</span>'}
-      </span>`;
-    }).join('');
+    const posTeam = `${(p.positions||[p.position]).join('/')} · ${p.team||'FA'}`;
+    const ageStr = p.age ? `${p.age} J. · ` : '';
 
-    rowsHtml += `<div class="ov-list-row" data-id="${r.pid}" data-idx="${idx}">
+    rowsHtml += `<div class="ov-list-row" data-id="${r.pid}">
       <div class="ov-list-rk">${idx+1}</div>
       <img class="ov-list-hs" src="https://sleepercdn.com/content/nfl/players/${r.pid}.jpg" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
       <div class="ov-list-hs-fb" style="display:none">${initials}</div>
       <div class="ov-list-name-wrap">
         <div class="ov-list-name">${p.full_name}</div>
-        <div class="ov-list-sub">${p.age ? p.age+' J.' : ''} ${warn}</div>
+        <div class="ov-list-sub">${ageStr}${posTeam}</div>
       </div>
-      <div class="ov-list-cell">${(p.positions||[p.position]).join('/')} · ${p.team||'FA'}</div>
       <div class="ov-list-cell best">${r.best}</div>
       <div class="ov-list-cell worst">${r.worst}</div>
       <div class="ov-list-cell avg">${r.avg.toFixed(1)}</div>
       <div class="ov-list-cell">${r.stdDev.toFixed(1)}</div>
       <div class="ov-list-cell">${r.raterCount}/${totalRaters}</div>
-      <div class="ov-list-chevron">▾</div>
-    </div>
-    <div class="ov-list-detail"><div class="ov-detail-tags">${detailTags}</div></div>`;
+      <button class="ov-list-chevron-btn" data-id="${r.pid}">▸</button>
+    </div>`;
   });
 
   wrap.innerHTML = `${legendHtml}<div class="ov-list-wrap">${headerHtml}${rowsHtml || '<div class="col-empty" style="padding:20px;">Noch keine Rankings vorhanden.</div>'}</div>`;
 
-  wrap.querySelectorAll('.ov-list-row').forEach(row => {
-    row.addEventListener('click', (e) => {
-      // Klick auf die Zeile klappt den Detailbereich auf/zu — ein Klick auf den
-      // Namen/Headshot direkt öffnet stattdessen wie gehabt den Spieler-Vergleich.
-      row.classList.toggle('open');
-    });
-  });
-  wrap.querySelectorAll('.ov-list-name, .ov-list-hs, .ov-list-hs-fb').forEach(el => {
-    el.addEventListener('click', (e) => {
-      e.stopPropagation();
+  wrap.querySelectorAll('.ov-list-name-wrap, .ov-list-hs, .ov-list-hs-fb').forEach(el => {
+    el.addEventListener('click', () => {
       const row = el.closest('.ov-list-row');
       if(row) openComparison(row.dataset.id);
     });
   });
+  wrap.querySelectorAll('.ov-list-chevron-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const row = btn.closest('.ov-list-row');
+      const r = results.find(x => x.pid === btn.dataset.id);
+      openOverviewDrawer(btn.dataset.id, r, row);
+    });
+  });
 }
+
+// ── SEITEN-DRAWER: zeigt für einen Spieler pro Rater Logo + Tier + Rang ──────
+let overviewDrawerOpenId = null;
+function openOverviewDrawer(pid, r, row){
+  const drawer = document.getElementById('ov-side-drawer');
+  const overlay = document.getElementById('ov-drawer-overlay');
+  const p = playerMap[pid];
+
+  // Erneuter Klick auf denselben Spieler schließt den Drawer wieder zu.
+  if(overviewDrawerOpenId === pid && drawer.classList.contains('open')){
+    closeOverviewDrawer();
+    return;
+  }
+  overviewDrawerOpenId = pid;
+  document.querySelectorAll('.ov-list-row').forEach(el => el.classList.toggle('active', el.dataset.id === pid));
+
+  document.getElementById('ov-drawer-title').textContent = p ? p.full_name : '–';
+  document.getElementById('ov-drawer-sub').textContent = p ? `${(p.positions||[p.position]).join('/')} · ${p.team||'FA'}` : '';
+
+  const listEl = document.getElementById('ov-drawer-list');
+  listEl.innerHTML = allRankings.map(u => {
+    const rec = r.records.find(x => x.userId === u.id);
+    const img = avatarFor(u.displayName);
+    const initial = (u.displayName || '?')[0].toUpperCase();
+    const avatarHtml = img ? `<img class="ov-drawer-avatar" src="${img}" alt="">` : `<div class="ov-drawer-avatar-fb">${initial}</div>`;
+    const statsHtml = rec
+      ? `<div class="ov-drawer-stats">Tier <b>${rec.tier}</b> · Rang <b>#${rec.rank}</b></div>`
+      : `<div class="ov-drawer-stats">Nicht bewertet</div>`;
+    return `<div class="ov-drawer-item${rec?'':' none'}">
+      ${avatarHtml}
+      <div class="ov-drawer-info">
+        <div class="ov-drawer-name">${u.displayName || 'Unbenannt'}</div>
+        ${statsHtml}
+      </div>
+    </div>`;
+  }).join('');
+
+  drawer.classList.add('open');
+  overlay.classList.add('open');
+}
+function closeOverviewDrawer(){
+  overviewDrawerOpenId = null;
+  document.getElementById('ov-side-drawer').classList.remove('open');
+  document.getElementById('ov-drawer-overlay').classList.remove('open');
+  document.querySelectorAll('.ov-list-row.active').forEach(el => el.classList.remove('active'));
+}
+document.getElementById('ov-drawer-close').addEventListener('click', closeOverviewDrawer);
+document.getElementById('ov-drawer-overlay').addEventListener('click', closeOverviewDrawer);
 
 function switchPosition(pos){
   currentPositionTag = pos;

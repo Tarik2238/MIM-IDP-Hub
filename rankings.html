@@ -94,6 +94,40 @@ nav{background:rgba(13,17,23,.97);backdrop-filter:blur(12px);border-bottom:1px s
 .ov-legend-num{font-size:10px;font-weight:700;background:var(--bg4);border:1px solid var(--border2);border-radius:3px;padding:0 4px;color:var(--muted2);}
 .ov-legend-avatar,.ov-legend-avatar-fb{width:20px;height:20px;border-radius:5px;object-fit:cover;}
 .ov-legend-avatar-fb{background:var(--orange);color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:10px;}
+
+/* ── KONSENS-LISTE (scrollbare Rangliste, siehe Chat) ── */
+.ov-list-wrap{max-width:1100px;margin:0 auto;padding:0 32px 40px;}
+.ov-list-hdr{display:grid;grid-template-columns:44px 44px 1fr 60px 56px 56px 56px 56px 70px 32px;gap:10px;align-items:center;padding:10px 14px;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border2);position:sticky;top:0;background:var(--bg);z-index:5;}
+.ov-list-hdr span{text-align:center;}
+.ov-list-hdr span:nth-child(3){text-align:left;}
+.ov-tier-bar{padding:8px 14px;font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:1.5px;color:#fff;background:var(--bg3);border-radius:6px;margin:14px 0 6px;}
+.ov-list-row{display:grid;grid-template-columns:44px 44px 1fr 60px 56px 56px 56px 56px 70px 32px;gap:10px;align-items:center;padding:9px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s;}
+.ov-list-row:hover{background:var(--bg2);}
+.ov-list-rk{text-align:center;font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--muted2);}
+.ov-list-hs,.ov-list-hs-fb{width:32px;height:32px;border-radius:6px;object-fit:cover;object-position:top;background:var(--bg3);}
+.ov-list-hs-fb{display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:11px;color:var(--muted);}
+.ov-list-name-wrap{min-width:0;}
+.ov-list-name{font-weight:700;color:#fff;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ov-list-sub{font-size:10px;color:var(--muted);margin-top:1px;}
+.ov-list-cell{text-align:center;font-size:12px;color:var(--text);}
+.ov-list-cell.best{color:var(--green-light);}
+.ov-list-cell.worst{color:#e0464a;}
+.ov-list-cell.avg{font-weight:700;color:var(--orange);}
+.ov-list-warn{color:var(--orange);font-weight:700;font-size:9px;display:block;}
+.ov-list-chevron{text-align:center;color:var(--muted);font-size:11px;transition:transform .2s;}
+.ov-list-row.open .ov-list-chevron{transform:rotate(180deg);}
+.ov-list-detail{display:none;grid-column:1/-1;padding:10px 14px 14px 108px;background:var(--bg2);border-bottom:1px solid var(--border);}
+.ov-list-row.open + .ov-list-detail{display:block;}
+.ov-detail-tags{display:flex;flex-wrap:wrap;gap:8px;}
+.ov-detail-tag{display:flex;align-items:center;gap:6px;font-size:11px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:4px 9px;}
+.ov-detail-tag.none{color:var(--muted);font-style:italic;}
+.ov-detail-num{font-size:9px;font-weight:700;background:var(--bg4);border-radius:3px;padding:0 4px;color:var(--muted2);}
+.ov-detail-rank{font-weight:700;color:var(--text);}
+.ov-detail-tier{color:var(--muted);}
+@media(max-width:900px){
+  .ov-list-hdr,.ov-list-row{grid-template-columns:32px 32px 1fr 44px 44px 44px 44px 44px 50px 24px;gap:6px;padding:8px 10px;}
+  .ov-list-detail{padding:10px 10px 14px 74px;}
+}
 .avatar-item .avatar-tip{position:absolute;bottom:-20px;left:50%;transform:translateX(-50%);font-size:9px;color:var(--muted);white-space:nowrap;opacity:0;transition:opacity .15s;pointer-events:none;}
 .avatar-item:hover .avatar-tip,.avatar-item.active .avatar-tip{opacity:1;}
 .status-pill{font-size:11px;padding:5px 12px;border-radius:20px;font-weight:600;letter-spacing:.5px;white-space:nowrap;}.status-edit{background:rgba(46,160,67,.12);color:var(--green-light);border:1px solid rgba(46,160,67,.25);}
@@ -136,6 +170,13 @@ nav{background:rgba(13,17,23,.97);backdrop-filter:blur(12px);border-bottom:1px s
 .tier-5 .col-hdr-title{color:#58a6ff;}
 .tier-6 .col-hdr-title{color:var(--muted2);}
 .tier-7 .col-hdr-title{color:#8b6dd6;}
+.ov-tier-bar.tier-1{color:#e0464a;}
+.ov-tier-bar.tier-2{color:var(--orange);}
+.ov-tier-bar.tier-3{color:#d4a72c;}
+.ov-tier-bar.tier-4{color:var(--green-light);}
+.ov-tier-bar.tier-5{color:#58a6ff;}
+.ov-tier-bar.tier-6{color:var(--muted2);}
+.ov-tier-bar.tier-7{color:#8b6dd6;}
 .col-body{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:8px;min-height:80px;position:relative;}
 .drop-indicator{position:absolute;left:10px;right:10px;height:3px;background:var(--orange);border-radius:2px;box-shadow:0 0 6px rgba(196,114,42,.7);pointer-events:none;display:none;z-index:5;}
 .col-body.drag-over{background:var(--orange-glow);outline:2px dashed var(--orange);outline-offset:-6px;}
@@ -1125,38 +1166,46 @@ function switchToOverview(){
   });
 }
 
-// Errechnet pro Spieler einen Konsens-Wert: Tier ist der Haupttreiber (vergleichbar
-// trotz unterschiedlich großer Tiers pro Nutzer), der Rang innerhalb des Tiers dient
-// nur als feine Sortierung innerhalb des Konsens-Tiers, nicht als harte Platzierung.
+// Errechnet pro Spieler die tatsächliche RANG-POSITION in JEDEM persönlichen
+// Ranking (Tiers t1..t7 hintereinandergehängt, Position = fortlaufender Index),
+// und daraus BEST/WORST/AVG/STD.DEV über alle Rater — genau wie in der
+// gewünschten Rangliste (siehe Chat, Bild 2). Tier bleibt zusätzlich als grobe
+// Gruppierung erhalten (Durchschnitt der einzelnen Tier-Zuordnungen, gerundet),
+// nur für die farbigen Tier-Balken zwischen den Zeilen — die Zahlen-Spalten
+// selbst basieren NICHT mehr auf Tier+Bruchteil, sondern auf echten Rängen.
 function computeOverview(){
-  const playerAgg = {}; // sleeper_id -> { records: [{userId, tier}], sumValue }
+  const playerAgg = {}; // sleeper_id -> { records: [{userId, rank, tier}] }
   allRankings.forEach(u => {
     const doc = overviewDocs[u.id];
     const posBoard = doc && doc.boards && doc.boards[currentPositionTag];
     if(!posBoard) return;
+    let rank = 0;
     TIERS.filter(t => t !== 'inbox').forEach(tierKey => {
       const tierNum = parseInt(tierKey.slice(1), 10);
       const arr = posBoard[tierKey] || [];
-      const size = arr.length;
-      arr.forEach((pid, i) => {
-        const rankInTier = i + 1;
-        const value = tierNum + (rankInTier / (size + 1)) * 0.9; // bleibt strikt innerhalb [tierNum, tierNum+0.9]
+      arr.forEach(pid => {
+        rank += 1;
         if(!playerAgg[pid]) playerAgg[pid] = { records: [] };
-        playerAgg[pid].records.push({ userId: u.id, tier: tierNum, value });
+        playerAgg[pid].records.push({ userId: u.id, rank, tier: tierNum });
       });
     });
   });
 
   const results = Object.entries(playerAgg).map(([pid, agg]) => {
-    const avg = agg.records.reduce((s,r) => s + r.value, 0) / agg.records.length;
-    const consensusTier = Math.max(1, Math.min(7, Math.floor(avg)));
-    return { pid, avg, consensusTier, raterCount: agg.records.length, records: agg.records };
+    const ranks = agg.records.map(r => r.rank);
+    const tiers = agg.records.map(r => r.tier);
+    const n = ranks.length;
+    const best = Math.min(...ranks);
+    const worst = Math.max(...ranks);
+    const avg = ranks.reduce((s,r) => s+r, 0) / n;
+    const variance = ranks.reduce((s,r) => s + (r-avg)*(r-avg), 0) / n;
+    const stdDev = Math.sqrt(variance);
+    const avgTier = tiers.reduce((s,t) => s+t, 0) / n;
+    const consensusTier = Math.max(1, Math.min(7, Math.round(avgTier)));
+    return { pid, best, worst, avg, stdDev, consensusTier, raterCount: n, records: agg.records };
   });
-  results.sort((a,b) => a.avg - b.avg || b.raterCount - a.raterCount);
-
-  const buckets = {1:[],2:[],3:[],4:[],5:[],6:[],7:[]};
-  results.forEach(r => buckets[r.consensusTier].push(r));
-  return buckets;
+  results.sort((a,b) => a.avg - b.avg || b.raterCount - a.raterCount || a.best - b.best);
+  return results;
 }
 
 function avatarChipHtml(user){
@@ -1169,56 +1218,75 @@ function avatarChipHtml(user){
 
 function renderOverviewBoard(){
   const wrap = document.getElementById('board-wrap');
-  const buckets = computeOverview();
+  const results = computeOverview();
   const totalRaters = allRankings.length;
 
   // Legende einmal oben: Nummer ↔ Nutzer, in EXAKT derselben Reihenfolge wie die
-  // nummerierten Tags auf jeder Karte weiter unten (beides basiert auf allRankings).
+  // nummerierten Tags im aufklappbaren Detailbereich jeder Zeile.
   const legendHtml = `<div class="ov-legend">
     <span class="ov-legend-label">Rater</span>
     ${allRankings.map((u,i) => `<span class="ov-legend-item"><span class="ov-legend-num">${i+1}</span>${avatarChipHtml(u)}${u.displayName||'Unbenannt'}</span>`).join('')}
   </div>`;
 
-  let overallRank = 0; // fortlaufend über alle Tier-Spalten hinweg, wie im individuellen Board
-  const colsHtml = ['t1','t2','t3','t4','t5','t6','t7'].map(tierKey => {
-    const tierNum = parseInt(tierKey.slice(1), 10);
-    const list = buckets[tierNum] || [];
-    const cards = list.map(r => {
-      const p = playerMap[r.pid];
-      if(!p) return '';
-      const warn = r.raterCount < totalRaters ? `<span class="ov-rater-warn">nur ${r.raterCount}/${totalRaters}</span>` : '';
-      // Tags jetzt mit vorangestellter Nummer (matcht die Legende oben), statt nur
-      // per Tooltip erkennbar zu sein, welcher Wert von welchem Nutzer stammt.
-      const perUserTags = allRankings.map((u,i) => {
-        const rec = r.records.find(x => x.userId === u.id);
-        return `<span class="ov-user-tag${rec?'':' ov-user-tag-none'}" title="${u.displayName||''}"><span class="ov-tag-num">${i+1}</span>${rec ? 'T'+rec.tier : '–'}</span>`;
-      }).join('');
-      const rankBadge = `<span class="pcard-rank">#${++overallRank}</span>`;
-      return `<div class="pcard" data-id="${r.pid}">
-        ${headshotHtml(p)}
-        <div class="pcard-info">
-          <div class="pcard-name">${p.full_name}</div>
-          <div class="pcard-sub">${(p.positions||[p.position]).join('/')} · ${p.team||'FA'} ${warn}</div>
-          <div class="ov-user-tags">${perUserTags}</div>
-        </div>
-        ${rankBadge}
-      </div>`;
-    }).join('');
-    return `<div class="col ${'tier-'+tierNum}" data-tier="${tierKey}">
-      <div class="col-hdr">
-        <div class="col-hdr-title">${TIER_LABELS[tierKey]}</div>
-        <div class="col-hdr-count">${list.length}</div>
-      </div>
-      <div class="col-body">${cards || '<div class="col-empty">Leer</div>'}</div>
-    </div>`;
-  }).join('');
+  const headerHtml = `<div class="ov-list-hdr">
+    <span>RK</span><span></span><span>Spieler</span><span>Pos</span>
+    <span>Best</span><span>Worst</span><span>Avg</span><span>Std.Dev</span><span>Rater</span><span></span>
+  </div>`;
 
-  wrap.innerHTML = `${legendHtml}<div class="board">${colsHtml}</div>`;
-  wrap.querySelectorAll('.pcard').forEach(card => {
-    card.style.cursor = 'pointer';
-    card.addEventListener('click', () => openComparison(card.dataset.id));
+  let rowsHtml = '';
+  let lastTier = null;
+  results.forEach((r, idx) => {
+    const p = playerMap[r.pid];
+    if(!p) return;
+    if(r.consensusTier !== lastTier){
+      rowsHtml += `<div class="ov-tier-bar tier-${r.consensusTier}">${TIER_LABELS['t'+r.consensusTier]}</div>`;
+      lastTier = r.consensusTier;
+    }
+    const initials = (p.full_name||'??').split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
+    const warn = r.raterCount < totalRaters ? `<span class="ov-list-warn">nur ${r.raterCount}/${totalRaters}</span>` : '';
+    const detailTags = allRankings.map((u,i) => {
+      const rec = r.records.find(x => x.userId === u.id);
+      return `<span class="ov-detail-tag${rec?'':' none'}" title="${u.displayName||''}">
+        <span class="ov-detail-num">${i+1}</span>
+        ${rec ? `<span class="ov-detail-rank">#${rec.rank}</span><span class="ov-detail-tier">T${rec.tier}</span>` : '<span>–</span>'}
+      </span>`;
+    }).join('');
+
+    rowsHtml += `<div class="ov-list-row" data-id="${r.pid}" data-idx="${idx}">
+      <div class="ov-list-rk">${idx+1}</div>
+      <img class="ov-list-hs" src="https://sleepercdn.com/content/nfl/players/${r.pid}.jpg" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+      <div class="ov-list-hs-fb" style="display:none">${initials}</div>
+      <div class="ov-list-name-wrap">
+        <div class="ov-list-name">${p.full_name}</div>
+        <div class="ov-list-sub">${p.age ? p.age+' J.' : ''} ${warn}</div>
+      </div>
+      <div class="ov-list-cell">${(p.positions||[p.position]).join('/')} · ${p.team||'FA'}</div>
+      <div class="ov-list-cell best">${r.best}</div>
+      <div class="ov-list-cell worst">${r.worst}</div>
+      <div class="ov-list-cell avg">${r.avg.toFixed(1)}</div>
+      <div class="ov-list-cell">${r.stdDev.toFixed(1)}</div>
+      <div class="ov-list-cell">${r.raterCount}/${totalRaters}</div>
+      <div class="ov-list-chevron">▾</div>
+    </div>
+    <div class="ov-list-detail"><div class="ov-detail-tags">${detailTags}</div></div>`;
   });
-  attachSyncedScroll(wrap);
+
+  wrap.innerHTML = `${legendHtml}<div class="ov-list-wrap">${headerHtml}${rowsHtml || '<div class="col-empty" style="padding:20px;">Noch keine Rankings vorhanden.</div>'}</div>`;
+
+  wrap.querySelectorAll('.ov-list-row').forEach(row => {
+    row.addEventListener('click', (e) => {
+      // Klick auf die Zeile klappt den Detailbereich auf/zu — ein Klick auf den
+      // Namen/Headshot direkt öffnet stattdessen wie gehabt den Spieler-Vergleich.
+      row.classList.toggle('open');
+    });
+  });
+  wrap.querySelectorAll('.ov-list-name, .ov-list-hs, .ov-list-hs-fb').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const row = el.closest('.ov-list-row');
+      if(row) openComparison(row.dataset.id);
+    });
+  });
 }
 
 function switchPosition(pos){

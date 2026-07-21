@@ -119,6 +119,9 @@ nav{background:rgba(13,17,23,.97);backdrop-filter:blur(12px);border-bottom:1px s
 .ov-rater-cell.none{opacity:.3;}
 .ov-rater-cell .ov-rt{color:var(--muted);font-size:9px;display:block;}
 .ov-rater-cell .ov-rr{font-weight:700;color:var(--text);}
+.ov-rater-hdr-cell.mine{background:var(--orange-glow);border-radius:6px;padding:3px 4px;}
+.ov-rater-cell.mine{background:var(--orange-glow);border-radius:6px;}
+.ov-rater-cell.mine .ov-rr{color:var(--orange);}
 .avatar-item .avatar-tip{position:absolute;bottom:-20px;left:50%;transform:translateX(-50%);font-size:9px;color:var(--muted);white-space:nowrap;opacity:0;transition:opacity .15s;pointer-events:none;}
 .avatar-item:hover .avatar-tip,.avatar-item.active .avatar-tip{opacity:1;}
 .status-pill{font-size:11px;padding:5px 12px;border-radius:20px;font-weight:600;letter-spacing:.5px;white-space:nowrap;}.status-edit{background:rgba(46,160,67,.12);color:var(--green-light);border:1px solid rgba(46,160,67,.25);}
@@ -152,6 +155,12 @@ nav{background:rgba(13,17,23,.97);backdrop-filter:blur(12px);border-bottom:1px s
 .col{flex:1 1 0;min-width:150px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);display:flex;flex-direction:column;max-height:calc(100vh - 260px);}
 .col-inbox{border-style:dashed;border-color:var(--border2);}
 .col-hdr{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--bg3);border-radius:var(--radius) var(--radius) 0 0;}
+.inbox-clear-btn{font-size:10px;font-weight:600;letter-spacing:.3px;color:var(--muted);background:none;border:1px solid var(--border2);border-radius:5px;padding:3px 8px;cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif;}
+.inbox-clear-btn:hover{color:#e0464a;border-color:#e0464a;}
+.view-toggle{display:flex;gap:3px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:3px;}
+.view-toggle-btn{background:none;border:none;color:var(--muted);font-family:'Inter',sans-serif;font-size:11px;font-weight:700;letter-spacing:.3px;padding:5px 12px;border-radius:6px;cursor:pointer;transition:all .15s;}
+.view-toggle-btn:hover{color:var(--text);}
+.view-toggle-btn.active{background:var(--orange);color:#fff;}
 .col-hdr-title{font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1.5px;color:#fff;}
 .col-hdr-count{font-size:11px;color:var(--muted);background:var(--bg4);border-radius:10px;padding:2px 8px;}
 .tier-1 .col-hdr-title{color:#e0464a;}
@@ -308,6 +317,10 @@ nav{background:rgba(13,17,23,.97);backdrop-filter:blur(12px);border-bottom:1px s
   </div>
 
   <div class="tb-right">
+    <div class="view-toggle" id="view-toggle">
+      <button class="view-toggle-btn active" data-mode="grid">Grid</button>
+      <button class="view-toggle-btn" data-mode="list">Liste</button>
+    </div>
     <span class="status-pill status-view" id="status-pill">Nur Ansicht</span>
     <span class="save-indicator" id="save-indicator">Gespeichert ✓</span>
     <button class="export-btn" id="export-btn">⬇ CSV Export</button>
@@ -730,6 +743,7 @@ const TIER_LABELS = { inbox:'Inbox', t1:'Tier 1', t2:'Tier 2', t3:'Tier 3', t4:'
 const NOW_YEAR = new Date().getFullYear();
 let currentUser = null;              // Firebase user (eingeloggt oder null)
 let viewingUserId = null;            // wessen Board wird gerade angezeigt
+let boardDisplayMode = 'grid';       // 'grid' (bisherige Tier-Spalten) oder 'list' (neue Rangliste, siehe Chat)
 let currentListType = 'dynasty';     // dynasty | redraft | rookie
 let currentRookieYear = NOW_YEAR;    // nur relevant wenn currentListType === 'rookie'
 let currentPositionTag = 'DL';       // DL | LB | DB
@@ -816,6 +830,7 @@ function renderBoard(){
     return `<div class="col ${tierKey==='inbox'?'col-inbox':'tier-'+tierKey.slice(1)}" data-tier="${tierKey}">
       <div class="col-hdr">
         <div class="col-hdr-title">${TIER_LABELS[tierKey]}</div>
+        ${tierKey === 'inbox' && editable && (board.inbox||[]).length ? `<button class="inbox-clear-btn" id="inbox-clear-btn" title="Gesamte Inbox leeren">Leeren</button>` : ''}
         <div class="col-hdr-count">${ids.length}</div>
       </div>
       <div class="col-body" data-tier="${tierKey}">
@@ -840,6 +855,16 @@ function renderBoard(){
         renderBoard();
       });
     });
+    const clearBtn = document.getElementById('inbox-clear-btn');
+    if(clearBtn){
+      clearBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        if(!confirm(`Wirklich die gesamte Inbox leeren? (${(board.inbox||[]).length} Spieler werden entfernt, das lässt sich nicht rückgängig machen.)`)) return;
+        board.inbox = [];
+        scheduleSave();
+        renderBoard();
+      });
+    }
     wrap.querySelectorAll('.pcard.editable').forEach(card => {
       card.addEventListener('pointerdown', onCardPointerDown);
     });
@@ -1090,7 +1115,6 @@ function markActiveAvatar(userId){
 
 function switchView(userId){
   if(unsubBoard) unsubBoard();
-  unsubOverview();
   viewMode = 'user';
   viewingUserId = userId;
   markActiveAvatar(userId);
@@ -1102,17 +1126,45 @@ function switchView(userId){
   document.getElementById('search-hint').textContent = editable
     ? 'Ziehe Spieler per Drag & Drop in die Tiers. Änderungen werden automatisch gespeichert.'
     : (currentUser ? 'Du siehst das Ranking eines anderen Nutzers (nur Ansicht).' : 'Melde dich an, um dein eigenes Ranking zu bearbeiten.');
+  document.getElementById('view-toggle').style.display = 'flex'; // Grid/Liste-Umschalter nur in der individuellen Ansicht, nicht im Konsens (siehe Chat)
 
   unsubBoard = watchBoard(userId, effectiveListKey(), data => {
     latestListDoc = data;
     applyBoardFromLatest();
   });
+  ensureOverviewDataForCurrentNeed();
+}
+
+// Lädt/entlädt die Boards ALLER Rater (nicht nur des gerade betrachteten) —
+// gebraucht für die Liste-Ansicht des persönlichen Rankings (zeigt pro Rater
+// eine eigene Spalte, siehe Chat), UND für die Konsens-Overview. Idempotent:
+// macht nichts, wenn schon im richtigen Zustand.
+function ensureOverviewDataForCurrentNeed(){
+  const needsAllBoards = (viewMode === 'overview') || (viewMode === 'user' && boardDisplayMode === 'list');
+  unsubOverview(); // immer sauber neu aufbauen (wichtig bei Format-/Jahr-Wechsel, sonst bliebe der alte Schlüssel aktiv)
+  if(needsAllBoards){
+    overviewDocs = {};
+    allRankings.forEach(u => {
+      const unsub = watchBoard(u.id, effectiveListKey(), data => {
+        overviewDocs[u.id] = data;
+        renderCurrentView();
+      });
+      overviewUnsubs.push(unsub);
+    });
+  }
+}
+
+// Zentrale Weiche: rendert je nach viewMode/boardDisplayMode die richtige Ansicht.
+function renderCurrentView(){
+  if(viewMode === 'overview'){ renderOverviewBoard(); return; }
+  if(boardDisplayMode === 'list'){ renderPersonalListView(); return; }
+  renderBoard();
 }
 
 function applyBoardFromLatest(){
   board = (latestListDoc && latestListDoc.boards && latestListDoc.boards[currentPositionTag]) ? latestListDoc.boards[currentPositionTag] : emptyBoard();
   TIERS.forEach(t => { if(!board[t]) board[t] = []; });
-  renderBoard();
+  renderCurrentView();
 
   const stampEl = document.getElementById('ranking-updated-at');
   if(stampEl){
@@ -1138,7 +1190,6 @@ function unsubOverview(){
 
 function switchToOverview(){
   if(unsubBoard) unsubBoard();
-  unsubOverview();
   viewMode = 'overview';
   viewingUserId = null;
   editable = false;
@@ -1148,15 +1199,9 @@ function switchToOverview(){
   searchInput.disabled = true;
   searchInput.placeholder = 'Konsens-Ansicht – keine Bearbeitung möglich';
   document.getElementById('search-hint').textContent = 'Automatisch berechneter Konsens aus allen Rankings dieses Formats/dieser Position — rein informativ, nicht editierbar.';
+  document.getElementById('view-toggle').style.display = 'none'; // Grid/Liste-Umschalter nur in der individuellen Ansicht (siehe Chat)
 
-  overviewDocs = {};
-  allRankings.forEach(u => {
-    const unsub = watchBoard(u.id, effectiveListKey(), data => {
-      overviewDocs[u.id] = data;
-      renderOverviewBoard();
-    });
-    overviewUnsubs.push(unsub);
-  });
+  ensureOverviewDataForCurrentNeed();
 }
 
 // Kombiniert beide Ansätze (siehe Chat): Sortierung/Tier-Gruppierung läuft wieder
@@ -1212,12 +1257,17 @@ function computeOverview(){
   return results;
 }
 
-function renderOverviewBoard(){
-  const wrap = document.getElementById('board-wrap');
-  const results = computeOverview();
+// Geteilte Rangliste-Bau-Funktion (siehe Chat): sowohl die Konsens-Overview als
+// auch die neue "Liste"-Ansicht des persönlichen Rankings nutzen exakt dasselbe
+// Layout (Spalten, Pro-Rater-Spalten mit Logo). Unterschied nur:
+// - tierFor(r): welcher Tier-Wert für die Balken-Gruppierung genutzt wird
+//   (Konsens = gemittelter Tier aller Rater; persönlich = der Tier DIESES Raters)
+// - highlightUserId: hebt die Spalte des gerade betrachteten Raters farblich hervor
+function buildRaterListHtml(results, opts){
+  opts = opts || {};
+  const tierFor = opts.tierFor || (r => r.consensusTier);
+  const highlightUserId = opts.highlightUserId || null;
 
-  // Grid-Spalten dynamisch: feste Basis-Spalten + eine Spalte pro Rater (statt
-  // fester Anzahl 5, falls das Team mal wächst/schrumpft).
   const raterColWidth = 68;
   const gridCols = `44px 36px 1fr 52px 52px 50px 56px repeat(${allRankings.length}, ${raterColWidth}px)`;
 
@@ -1225,7 +1275,8 @@ function renderOverviewBoard(){
     const img = avatarFor(u.displayName);
     const initial = (u.displayName || '?')[0].toUpperCase();
     const avatarHtml = img ? `<img class="ov-rater-hdr-avatar" src="${img}" alt="">` : `<div class="ov-rater-hdr-avatar-fb">${initial}</div>`;
-    return `<span class="ov-rater-hdr-cell" title="${u.displayName||''}">${avatarHtml}</span>`;
+    const mineClass = u.id === highlightUserId ? ' mine' : '';
+    return `<span class="ov-rater-hdr-cell${mineClass}" title="${u.displayName||''}">${avatarHtml}</span>`;
   }).join('');
 
   const headerHtml = `<div class="ov-list-hdr" style="grid-template-columns:${gridCols};">
@@ -1242,9 +1293,10 @@ function renderOverviewBoard(){
   results.forEach((r, idx) => {
     const p = playerMap[r.pid];
     if(!p) return;
-    if(r.consensusTier !== lastTier){
-      rowsHtml += `<div class="ov-tier-bar tier-${r.consensusTier}">${TIER_LABELS['t'+r.consensusTier]}</div>`;
-      lastTier = r.consensusTier;
+    const tier = tierFor(r);
+    if(tier !== lastTier){
+      rowsHtml += `<div class="ov-tier-bar tier-${tier}">${TIER_LABELS['t'+tier]}</div>`;
+      lastTier = tier;
     }
     const initials = (p.full_name||'??').split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
     const posTeam = `${(p.positions||[p.position]).join('/')} · ${p.team||'FA'}`;
@@ -1252,9 +1304,10 @@ function renderOverviewBoard(){
 
     const raterCells = allRankings.map(u => {
       const rec = r.records.find(x => x.userId === u.id);
+      const mineClass = u.id === highlightUserId ? ' mine' : '';
       return rec
-        ? `<div class="ov-rater-cell"><span class="ov-rt">T${rec.tier}</span><span class="ov-rr">#${rec.rank}</span></div>`
-        : `<div class="ov-rater-cell none">–</div>`;
+        ? `<div class="ov-rater-cell${mineClass}"><span class="ov-rt">T${rec.tier}</span><span class="ov-rr">#${rec.rank}</span></div>`
+        : `<div class="ov-rater-cell none${mineClass}">–</div>`;
     }).join('');
 
     rowsHtml += `<div class="ov-list-row" data-id="${r.pid}" style="grid-template-columns:${gridCols};">
@@ -1273,14 +1326,38 @@ function renderOverviewBoard(){
     </div>`;
   });
 
-  wrap.innerHTML = `<div class="ov-list-wrap">${headerHtml}${rowsHtml || '<div class="col-empty" style="padding:20px;">Noch keine Rankings vorhanden.</div>'}</div>`;
+  return `<div class="ov-list-wrap">${headerHtml}${rowsHtml || '<div class="col-empty" style="padding:20px;">Noch keine Rankings vorhanden.</div>'}</div>`;
+}
 
+function attachRaterListEvents(wrap){
   wrap.querySelectorAll('.ov-list-name-wrap, .ov-list-hs, .ov-list-hs-fb').forEach(el => {
     el.addEventListener('click', () => {
       const row = el.closest('.ov-list-row');
       if(row) openComparison(row.dataset.id);
     });
   });
+}
+
+function renderOverviewBoard(){
+  const wrap = document.getElementById('board-wrap');
+  const results = computeOverview();
+  wrap.innerHTML = buildRaterListHtml(results);
+  attachRaterListEvents(wrap);
+}
+
+// Liste-Ansicht des PERSÖNLICHEN Rankings (siehe Chat): gleicher Aufbau wie die
+// Konsens-Liste (inkl. aller Rater-Spalten zum Vergleich), aber gefiltert auf
+// Spieler, die der gerade betrachtete Rater überhaupt eingeordnet hat, sortiert
+// nach DESSEN eigenem Tier+Rang (nicht dem Konsens) — und dessen Spalte farblich
+// hervorgehoben, damit man sie unter den anderen sofort wiederfindet.
+function renderPersonalListView(){
+  const wrap = document.getElementById('board-wrap');
+  const all = computeOverview();
+  const mine = all.filter(r => r.records.some(x => x.userId === viewingUserId));
+  mine.forEach(r => { r.myRecord = r.records.find(x => x.userId === viewingUserId); });
+  mine.sort((a,b) => a.myRecord.value - b.myRecord.value);
+  wrap.innerHTML = buildRaterListHtml(mine, { tierFor: r => r.myRecord.tier, highlightUserId: viewingUserId });
+  attachRaterListEvents(wrap);
 }
 
 
@@ -1294,6 +1371,16 @@ function switchPosition(pos){
 
 document.querySelectorAll('.pos-tab').forEach(btn => {
   btn.addEventListener('click', () => switchPosition(btn.dataset.pos));
+});
+
+document.querySelectorAll('.view-toggle-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if(btn.classList.contains('active')) return;
+    boardDisplayMode = btn.dataset.mode;
+    document.querySelectorAll('.view-toggle-btn').forEach(b => b.classList.toggle('active', b === btn));
+    ensureOverviewDataForCurrentNeed(); // ggf. Boards aller Rater nachladen, wenn erstmals in die Liste gewechselt wird
+    renderCurrentView();
+  });
 });
 
 document.querySelectorAll('.fmt-tab').forEach(btn => {
